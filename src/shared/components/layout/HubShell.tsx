@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom'
+import { Link, Outlet } from 'react-router-dom'
 import { LogOut } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/shared/lib/supabaseClient'
@@ -21,9 +21,9 @@ export function HubShell() {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="flex items-center justify-between border-b px-4 py-2.5">
-        <div className="flex items-center gap-2">
+        <Link to="/" className="press-feedback flex items-center gap-2">
           <img src={avyonLogo} alt="Avyon" className="h-7 w-auto" />
-        </div>
+        </Link>
 
         <ModuleSwitcher />
 
