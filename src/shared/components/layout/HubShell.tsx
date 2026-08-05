@@ -5,6 +5,7 @@ import { supabase } from '@/shared/lib/supabaseClient'
 import { useLogger } from '@/shared/hooks/useLogger'
 import { ModuleSwitcher } from '@/shared/components/layout/ModuleSwitcher'
 import { Button } from '@/shared/components/ui/button'
+import avyonLogo from '@/assets/avyon-logo.png'
 
 export function HubShell() {
   const log = useLogger()
@@ -21,12 +22,7 @@ export function HubShell() {
     <div className="flex min-h-screen flex-col">
       <header className="flex items-center justify-between border-b px-4 py-2.5">
         <div className="flex items-center gap-2">
-          <div className="bg-gradient-brand flex size-7 items-center justify-center rounded-full">
-            <span className="text-primary-foreground font-display text-xs font-bold">A</span>
-          </div>
-          <span className="text-gradient-brand font-display hidden text-sm font-semibold sm:inline">
-            Avyon
-          </span>
+          <img src={avyonLogo} alt="Avyon" className="h-7 w-auto" />
         </div>
 
         <ModuleSwitcher />

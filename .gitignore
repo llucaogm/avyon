@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Raw logo source dumps (processed into src/assets and public/icons)
+/avyon-logo.png
+/icon-avyon.png

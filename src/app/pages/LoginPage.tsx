@@ -15,8 +15,8 @@ import {
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle,
 } from '@/shared/components/ui/card'
+import avyonLogo from '@/assets/avyon-logo.png'
 
 const schema = z.object({
   email: z.string().email('Informe um e-mail válido'),
@@ -67,10 +67,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
       <Card className="animate-fade-in-up w-full max-w-sm">
         <CardHeader className="items-center text-center">
-          <div className="animate-pop-in bg-gradient-brand mb-2 flex size-12 items-center justify-center rounded-full">
-            <span className="text-primary-foreground font-display text-lg font-bold">A</span>
-          </div>
-          <CardTitle className="font-display text-xl">Avyon</CardTitle>
+          <img src={avyonLogo} alt="Avyon" className="animate-pop-in mb-2 h-12 w-auto" />
           <CardDescription>
             {mode === 'login' ? 'Entre para acessar seu hub' : 'Crie sua conta gratuita'}
           </CardDescription>
