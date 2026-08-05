@@ -1,0 +1,231 @@
+import { useEffect, useMemo, useState } from 'react'
+import { useForm, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { toast } from 'sonner'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/shared/components/ui/sheet'
+import { Input } from '@/shared/components/ui/input'
+import { ToggleGroup, ToggleGroupItem } from '@/shared/components/ui/toggle-group'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/components/ui/select'
+import { useExpenseCategories, useIncomeCategories } from '@/modules/financeiro/hooks/useCategories'
+import { useCreateTransaction, useRecentTransactions } from '@/modules/financeiro/hooks/useTransactions'
+import { suggestExpenseCategory } from '@/modules/financeiro/lib/categorySuggest'
+import { todayIso } from '@/modules/financeiro/lib/monthUtils'
+import { getErrorMessage } from '@/shared/lib/errors'
+import { FormField } from '@/shared/components/common/FormField'
+import { SubmitButton } from '@/shared/components/common/SubmitButton'
+
+const paymentMethods = ['Débito', 'Crédito', 'Pix', 'Dinheiro', 'Outro']
+
+const schema = z.object({
+  tipo: z.enum(['entrada', 'saida']),
+  valor: z.coerce.number().positive('Informe um valor maior que zero'),
+  descricao: z.string().min(1, 'Descreva o lançamento'),
+  categoryId: z.string().optional(),
+  data: z.string().min(1),
+  formaPagamento: z.string().optional(),
+})
+
+type FormInput = z.input<typeof schema>
+type FormOutput = z.output<typeof schema>
+
+interface QuickAddSheetProps {
+  open: boolean
+  onOpenChange: (v: boolean) => void
+}
+
+export function QuickAddSheet({ open, onOpenChange }: QuickAddSheetProps) {
+  const { data: expenseCategories = [] } = useExpenseCategories()
+  const { data: incomeCategories = [] } = useIncomeCategories()
+  const { data: recentTransactions = [] } = useRecentTransactions()
+  const createTransaction = useCreateTransaction()
+  const [autoSuggested, setAutoSuggested] = useState(false)
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    watch,
+    setValue,
+    reset,
+    formState: { errors },
+  } = useForm<FormInput, unknown, FormOutput>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      tipo: 'saida',
+      valor: undefined,
+      descricao: '',
+      categoryId: undefined,
+      data: todayIso(),
+      formaPagamento: undefined,
+    },
+  })
+
+  const tipo = watch('tipo')
+  const descricao = watch('descricao')
+
+  const categoryOptions = tipo === 'saida' ? expenseCategories : incomeCategories
+
+  const suggestion = useMemo(() => {
+    if (tipo !== 'saida') return null
+    return suggestExpenseCategory(descricao, recentTransactions)
+  }, [tipo, descricao, recentTransactions])
+
+  useEffect(() => {
+    if (suggestion && !autoSuggested) {
+      setValue('categoryId', suggestion)
+      setAutoSuggested(true)
+    }
+  }, [suggestion, autoSuggested, setValue])
+
+  useEffect(() => {
+    if (!open) {
+      reset()
+      setAutoSuggested(false)
+    }
+  }, [open, reset])
+
+  async function onSubmit(values: FormOutput) {
+    try {
+      await createTransaction.mutateAsync({
+        data: values.data,
+        descricao: values.descricao,
+        valor_entrada: values.tipo === 'entrada' ? values.valor : 0,
+        valor_saida: values.tipo === 'saida' ? values.valor : 0,
+        expense_category_id: values.tipo === 'saida' ? values.categoryId ?? null : null,
+        income_category_id: values.tipo === 'entrada' ? values.categoryId ?? null : null,
+        forma_pagamento: values.formaPagamento ?? null,
+      })
+      toast.success('Lançamento adicionado')
+      onOpenChange(false)
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Erro ao salvar'))
+    }
+  }
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="bottom" className="max-h-[90vh] overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>Novo lançamento</SheetTitle>
+        </SheetHeader>
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 px-4 pb-6">
+          <Controller
+            control={control}
+            name="tipo"
+            render={({ field }) => (
+              <ToggleGroup
+                type="single"
+                value={field.value}
+                onValueChange={(v) => {
+                  if (v) {
+                    field.onChange(v)
+                    setValue('categoryId', undefined)
+                    setAutoSuggested(false)
+                  }
+                }}
+                className="w-full"
+              >
+                <ToggleGroupItem value="saida" className="flex-1">
+                  Saída
+                </ToggleGroupItem>
+                <ToggleGroupItem value="entrada" className="flex-1">
+                  Entrada
+                </ToggleGroupItem>
+              </ToggleGroup>
+            )}
+          />
+
+          <FormField label="Valor (R$)" htmlFor="valor" error={errors.valor?.message}>
+            <Input
+              id="valor"
+              type="number"
+              inputMode="decimal"
+              step="0.01"
+              autoFocus
+              {...register('valor')}
+            />
+          </FormField>
+
+          <FormField label="Descrição" htmlFor="descricao" error={errors.descricao?.message}>
+            <Input
+              id="descricao"
+              list="descricao-sugestoes"
+              placeholder="Ex: Mercado, Uber, Salário..."
+              {...register('descricao')}
+            />
+            <datalist id="descricao-sugestoes">
+              {[...new Set(recentTransactions.map((t) => t.descricao))].slice(0, 20).map((d) => (
+                <option key={d} value={d} />
+              ))}
+            </datalist>
+          </FormField>
+
+          <FormField label="Categoria" htmlFor="categoryId">
+            <Controller
+              control={control}
+              name="categoryId"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="categoryId" className="w-full">
+                    <SelectValue placeholder="Selecione uma categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categoryOptions.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {suggestion && tipo === 'saida' && (
+              <p className="text-xs text-muted-foreground">Categoria sugerida com base no histórico</p>
+            )}
+          </FormField>
+
+          <FormField label="Data" htmlFor="data">
+            <Input id="data" type="date" {...register('data')} />
+          </FormField>
+
+          <FormField label="Forma de pagamento">
+            <Controller
+              control={control}
+              name="formaPagamento"
+              render={({ field }) => (
+                <ToggleGroup
+                  type="single"
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  className="flex-wrap justify-start"
+                >
+                  {paymentMethods.map((m) => (
+                    <ToggleGroupItem key={m} value={m}>
+                      {m}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+              )}
+            />
+          </FormField>
+
+          <SubmitButton pending={createTransaction.isPending} className="mt-2">
+            Salvar
+          </SubmitButton>
+        </form>
+      </SheetContent>
+    </Sheet>
+  )
+}

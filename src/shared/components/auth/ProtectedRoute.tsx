@@ -1,0 +1,21 @@
+import { Navigate, Outlet } from 'react-router-dom'
+import { useAuth } from '@/shared/context/AuthProvider'
+import { Loader2 } from 'lucide-react'
+
+export function ProtectedRoute() {
+  const { session, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  if (!session) {
+    return <Navigate to="/login" replace />
+  }
+
+  return <Outlet />
+}

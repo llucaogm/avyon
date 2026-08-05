@@ -1,0 +1,220 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/space-grotesk";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+    --font-heading: var(--font-display);
+    --font-sans: 'Geist Variable', sans-serif;
+    --font-display: 'Space Grotesk Variable', sans-serif;
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar: var(--sidebar);
+    --color-chart-5: var(--chart-5);
+    --color-chart-4: var(--chart-4);
+    --color-chart-3: var(--chart-3);
+    --color-chart-2: var(--chart-2);
+    --color-chart-1: var(--chart-1);
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+    --color-border: var(--border);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent: var(--accent);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted: var(--muted);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary: var(--secondary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary: var(--primary);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-popover: var(--popover);
+    --color-card-foreground: var(--card-foreground);
+    --color-card: var(--card);
+    --color-foreground: var(--foreground);
+    --color-background: var(--background);
+    /* Brand signature — teal→blue, used selectively (logo, CTAs, active nav pill). */
+    --color-brand-teal: var(--brand-teal);
+    --color-brand-blue: var(--brand-blue);
+    /* Group accents — Fixo/Variável/Objetivo/Reserva, 4 stops on the brand ramp. */
+    --color-group-fixo: var(--group-fixo);
+    --color-group-fixo-foreground: var(--group-fixo-foreground);
+    --color-group-variavel: var(--group-variavel);
+    --color-group-variavel-foreground: var(--group-variavel-foreground);
+    --color-group-objetivo: var(--group-objetivo);
+    --color-group-objetivo-foreground: var(--group-objetivo-foreground);
+    --color-group-reserva: var(--group-reserva);
+    --color-group-reserva-foreground: var(--group-reserva-foreground);
+    --radius-sm: calc(var(--radius) * 0.6);
+    --radius-md: calc(var(--radius) * 0.8);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) * 1.4);
+    --radius-2xl: calc(var(--radius) * 1.8);
+    --radius-3xl: calc(var(--radius) * 2.2);
+    --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* Avyon is dark-only by design — no separate light/.dark split. */
+:root {
+    --background: #0B0C10;
+    --foreground: #F5F7FA;
+    --card: #131519;
+    --card-foreground: #F5F7FA;
+    --popover: #131519;
+    --popover-foreground: #F5F7FA;
+    --primary: #22C8A7;
+    --primary-foreground: #06140E;
+    --secondary: #1B1E24;
+    --secondary-foreground: #F5F7FA;
+    --muted: #1B1E24;
+    --muted-foreground: #8B95A3;
+    --accent: #1B1E24;
+    --accent-foreground: #F5F7FA;
+    --destructive: #E5484D;
+    --destructive-foreground: #FBEAEA;
+    --border: #23262D;
+    --input: #23262D;
+    --ring: #22C8A7;
+    --chart-1: #22C8A7;
+    --chart-2: #1DA6C1;
+    --chart-3: #1784DC;
+    --chart-4: #5B93F7;
+    --chart-5: #8B95A3;
+    --radius: 0.75rem;
+    --sidebar: #0F1115;
+    --sidebar-foreground: #F5F7FA;
+    --sidebar-primary: #22C8A7;
+    --sidebar-primary-foreground: #06140E;
+    --sidebar-accent: #1B1E24;
+    --sidebar-accent-foreground: #F5F7FA;
+    --sidebar-border: #23262D;
+    --sidebar-ring: #22C8A7;
+
+    --brand-teal: #22C8A7;
+    --brand-blue: #1262F6;
+    --gradient-brand: linear-gradient(135deg, var(--brand-teal), var(--brand-blue));
+
+    --group-fixo: #22C8A7;
+    --group-fixo-foreground: #06140E;
+    --group-variavel: #1DA6C1;
+    --group-variavel-foreground: #06171A;
+    --group-objetivo: #1784DC;
+    --group-objetivo-foreground: #F5F7FA;
+    --group-reserva: #5B93F7;
+    --group-reserva-foreground: #071022;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    }
+  body {
+    @apply bg-background text-foreground;
+    }
+  html {
+    @apply font-sans;
+    }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+  .bg-gradient-brand {
+    background: var(--gradient-brand);
+  }
+  .text-gradient-brand {
+    background: var(--gradient-brand);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+}
+
+/* ---- Motion: signature moments, kept out of @layer so specificity stays simple ---- */
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+@keyframes check-draw {
+  from { stroke-dashoffset: 32; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes wash-pulse {
+  0% { background-color: color-mix(in oklab, var(--wash-color, var(--primary)) 0%, transparent); }
+  35% { background-color: color-mix(in oklab, var(--wash-color, var(--primary)) 16%, transparent); }
+  100% { background-color: color-mix(in oklab, var(--wash-color, var(--primary)) 0%, transparent); }
+}
+
+@keyframes pop-in {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: calc(var(--stagger-index, 0) * 45ms);
+}
+
+.animate-wash {
+  animation: wash-pulse 0.9s ease-out;
+}
+
+.animate-pop-in {
+  animation: pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.skeleton {
+  background-image: linear-gradient(
+    100deg,
+    var(--muted) 30%,
+    color-mix(in oklab, var(--muted) 60%, var(--card)) 50%,
+    var(--muted) 70%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+.press-feedback {
+  transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.press-feedback:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) {
+  .lift-on-hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .lift-on-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px -8px color-mix(in oklab, var(--brand-teal) 25%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

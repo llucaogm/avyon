@@ -1,0 +1,140 @@
+import { useMemo, type CSSProperties } from 'react'
+import { Trash2, ArrowDownCircle, ArrowUpCircle } from 'lucide-react'
+import { toast } from 'sonner'
+import { Card, CardContent } from '@/shared/components/ui/card'
+import { Button } from '@/shared/components/ui/button'
+import { MonthSwitcher } from '@/modules/financeiro/components/layout/MonthSwitcher'
+import { AnimatedCurrency } from '@/modules/financeiro/components/common/AnimatedCurrency'
+import { useMonth } from '@/modules/financeiro/context/MonthProvider'
+import { useMonthTransactions, useDeleteTransaction } from '@/modules/financeiro/hooks/useTransactions'
+import { useExpenseCategories, useIncomeCategories } from '@/modules/financeiro/hooks/useCategories'
+import { formatCurrency, formatDate } from '@/shared/lib/formatters'
+import { LoadingState } from '@/shared/components/common/LoadingState'
+import { EmptyState } from '@/shared/components/common/EmptyState'
+
+export default function TransactionsPage() {
+  const { selectedMonth } = useMonth()
+  const { data: transactions = [], isLoading } = useMonthTransactions(selectedMonth)
+  const { data: expenseCategories = [] } = useExpenseCategories()
+  const { data: incomeCategories = [] } = useIncomeCategories()
+  const deleteTransaction = useDeleteTransaction()
+
+  const categoryNameById = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const c of expenseCategories) map.set(c.id, c.nome)
+    for (const c of incomeCategories) map.set(c.id, c.nome)
+    return map
+  }, [expenseCategories, incomeCategories])
+
+  const totals = useMemo(() => {
+    const entradas = transactions.reduce((sum, t) => sum + t.valor_entrada, 0)
+    const saidas = transactions.reduce((sum, t) => sum + t.valor_saida, 0)
+    return { entradas, saidas, saldo: entradas - saidas }
+  }, [transactions])
+
+  const groupedByDay = useMemo(() => {
+    const groups = new Map<string, typeof transactions>()
+    for (const t of transactions) {
+      const key = t.data
+      if (!groups.has(key)) groups.set(key, [])
+      groups.get(key)!.push(t)
+    }
+    return [...groups.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1))
+  }, [transactions])
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div>
+        <h1 className="font-display text-2xl font-semibold">Lançamentos</h1>
+        <MonthSwitcher />
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
+        <Card className="animate-fade-in-up" style={{ '--stagger-index': 0 } as CSSProperties}>
+          <CardContent className="flex flex-col items-center gap-1 py-4">
+            <span className="text-xs text-muted-foreground">Entradas</span>
+            <AnimatedCurrency value={totals.entradas} className="font-display text-sm font-semibold text-primary" />
+          </CardContent>
+        </Card>
+        <Card className="animate-fade-in-up" style={{ '--stagger-index': 1 } as CSSProperties}>
+          <CardContent className="flex flex-col items-center gap-1 py-4">
+            <span className="text-xs text-muted-foreground">Saídas</span>
+            <AnimatedCurrency value={totals.saidas} className="font-display text-sm font-semibold text-destructive" />
+          </CardContent>
+        </Card>
+        <Card className="animate-fade-in-up" style={{ '--stagger-index': 2 } as CSSProperties}>
+          <CardContent className="flex flex-col items-center gap-1 py-4">
+            <span className="text-xs text-muted-foreground">Saldo</span>
+            <AnimatedCurrency value={totals.saldo} className="font-display text-sm font-semibold" />
+          </CardContent>
+        </Card>
+      </div>
+
+      {isLoading && <LoadingState />}
+
+      {!isLoading && transactions.length === 0 && (
+        <EmptyState message="Nenhum lançamento neste mês. Toque no botão + para adicionar." />
+      )}
+
+      {groupedByDay.map(([day, items], dayIndex) => (
+        <div
+          key={day}
+          className="animate-fade-in-up flex flex-col gap-2"
+          style={{ '--stagger-index': dayIndex } as CSSProperties}
+        >
+          <p className="text-xs font-medium text-muted-foreground">{formatDate(day)}</p>
+          <Card>
+            <CardContent className="flex flex-col divide-y p-0">
+              {items.map((t) => {
+                const isEntrada = t.valor_entrada > 0
+                const categoryName = t.expense_category_id
+                  ? categoryNameById.get(t.expense_category_id)
+                  : t.income_category_id
+                    ? categoryNameById.get(t.income_category_id)
+                    : null
+                return (
+                  <div
+                    key={t.id}
+                    className="flex items-center justify-between gap-2 p-3 transition-colors hover:bg-muted/40"
+                  >
+                    <div className="flex items-center gap-3">
+                      {isEntrada ? (
+                        <ArrowUpCircle className="size-5 shrink-0 text-primary" />
+                      ) : (
+                        <ArrowDownCircle className="size-5 shrink-0 text-destructive" />
+                      )}
+                      <div>
+                        <p className="text-sm font-medium">{t.descricao}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {categoryName ?? 'Sem categoria'}
+                          {t.forma_pagamento ? ` · ${t.forma_pagamento}` : ''}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-sm font-semibold ${isEntrada ? 'text-primary' : 'text-destructive'}`}>
+                        {isEntrada ? '+' : '-'}
+                        {formatCurrency(isEntrada ? t.valor_entrada : t.valor_saida)}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() =>
+                          deleteTransaction.mutate(t.id, {
+                            onError: () => toast.error('Não consegui excluir esse lançamento'),
+                          })
+                        }
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )
+              })}
+            </CardContent>
+          </Card>
+        </div>
+      ))}
+    </div>
+  )
+}
