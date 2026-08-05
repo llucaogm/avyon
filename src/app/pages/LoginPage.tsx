@@ -67,7 +67,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
       <Card className="animate-fade-in-up w-full max-w-sm">
         <CardHeader className="items-center text-center">
-          <img src={avyonLogo} alt="Avyon" className="animate-pop-in mb-2 h-12 w-auto" />
+          <img src={avyonLogo} alt="Avyon" className="animate-pop-in mx-auto mb-2 h-12 w-auto" />
           <CardDescription>
             {mode === 'login' ? 'Entre para acessar seu hub' : 'Crie sua conta gratuita'}
           </CardDescription>
