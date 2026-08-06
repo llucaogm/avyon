@@ -7,7 +7,7 @@ import type { Tables } from '@/shared/types/database.types'
 
 interface HabitRowProps {
   habit: Tables<'habits'>
-  isDoneToday: boolean
+  isDone: boolean
   streak: number
   longestStreak: number
   justConfirmed: boolean
@@ -17,7 +17,7 @@ interface HabitRowProps {
 
 export function HabitRow({
   habit,
-  isDoneToday,
+  isDone,
   streak,
   longestStreak,
   justConfirmed,
@@ -42,7 +42,7 @@ export function HabitRow({
         <ConfirmCheck color="var(--primary)" />
       ) : (
         <Checkbox
-          checked={isDoneToday}
+          checked={isDone}
           disabled={pending}
           onCheckedChange={onToggle}
           className="size-6"

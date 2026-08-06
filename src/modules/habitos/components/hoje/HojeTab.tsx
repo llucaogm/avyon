@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
-import { Settings } from 'lucide-react'
+import { addDays, format, isSameDay, subDays } from 'date-fns'
+import { ChevronLeft, ChevronRight, Settings } from 'lucide-react'
 import { toast } from 'sonner'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import { Button } from '@/shared/components/ui/button'
@@ -7,12 +8,12 @@ import { Progress } from '@/shared/components/ui/progress'
 import { LoadingState } from '@/shared/components/common/LoadingState'
 import { EmptyState } from '@/shared/components/common/EmptyState'
 import { useHabits } from '@/modules/habitos/hooks/useHabits'
-import { useHabitLogs, useToggleHabitLog } from '@/modules/habitos/hooks/useHabitLogs'
+import { useHabitLogs, useToggleHabitLog, HABIT_LOG_WINDOW_DAYS } from '@/modules/habitos/hooks/useHabitLogs'
 import { useHabitStreaks } from '@/modules/habitos/hooks/useHabitStreaks'
 import { HabitRow } from '@/modules/habitos/components/HabitRow'
 import { HabitsManageSheet } from '@/modules/habitos/components/hoje/HabitsManageSheet'
 import { isHabitScheduledOn } from '@/modules/habitos/lib/habitSchedule'
-import { todayIso } from '@/modules/habitos/lib/dateUtils'
+import { formatDayLabel } from '@/modules/habitos/lib/dateUtils'
 import { getErrorMessage } from '@/shared/lib/errors'
 
 const MILESTONES = [7, 30, 100]
@@ -24,17 +25,25 @@ export function HojeTab() {
   const streaks = useHabitStreaks(habits, logs)
   const [justConfirmed, setJustConfirmed] = useState<Set<string>>(new Set())
   const [manageOpen, setManageOpen] = useState(false)
+  const [selectedDate, setSelectedDate] = useState(() => new Date())
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>())
 
-  const today = todayIso()
-  const doneToday = useMemo(() => new Set(logs.filter((l) => l.data === today).map((l) => l.habit_id)), [logs, today])
+  const selectedIso = format(selectedDate, 'yyyy-MM-dd')
+  const isViewingToday = isSameDay(selectedDate, new Date())
+  const oldestEditable = subDays(new Date(), HABIT_LOG_WINDOW_DAYS - 1)
+  const canGoBack = selectedDate > oldestEditable
 
-  const todaysHabits = useMemo(
-    () => habits.filter((h) => isHabitScheduledOn(h, new Date())),
-    [habits],
+  const doneOnDate = useMemo(
+    () => new Set(logs.filter((l) => l.data === selectedIso).map((l) => l.habit_id)),
+    [logs, selectedIso],
   )
 
-  const progresso = todaysHabits.length > 0 ? doneToday.size / todaysHabits.length : 0
+  const habitsForDate = useMemo(
+    () => habits.filter((h) => isHabitScheduledOn(h, selectedDate)),
+    [habits, selectedDate],
+  )
+
+  const progresso = habitsForDate.length > 0 ? doneOnDate.size / habitsForDate.length : 0
 
   function playConfirmMoment(habitId: string) {
     setJustConfirmed((prev) => new Set(prev).add(habitId))
@@ -54,11 +63,12 @@ export function HojeTab() {
 
   function handleToggle(habitId: string, logged: boolean) {
     toggleLog.mutate(
-      { habitId, date: today, logged },
+      { habitId, date: selectedIso, logged },
       {
         onSuccess: () => {
           if (!logged) return
           playConfirmMoment(habitId)
+          if (!isViewingToday) return
           const current = streaks.get(habitId)?.current ?? 0
           const newStreak = current + 1
           if (MILESTONES.includes(newStreak)) {
@@ -75,16 +85,38 @@ export function HojeTab() {
 
   return (
     <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-center gap-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          disabled={!canGoBack}
+          onClick={() => setSelectedDate((d) => subDays(d, 1))}
+          aria-label="Dia anterior"
+        >
+          <ChevronLeft className="size-4" />
+        </Button>
+        <span className="min-w-[11ch] text-center text-sm font-medium">{formatDayLabel(selectedDate)}</span>
+        <Button
+          variant="ghost"
+          size="icon"
+          disabled={isViewingToday}
+          onClick={() => setSelectedDate((d) => addDays(d, 1))}
+          aria-label="Próximo dia"
+        >
+          <ChevronRight className="size-4" />
+        </Button>
+      </div>
+
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1">
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">
-              {todaysHabits.length > 0
-                ? `${doneToday.size}/${todaysHabits.length} hábitos hoje`
-                : 'Nenhum hábito programado para hoje'}
+              {habitsForDate.length > 0
+                ? `${doneOnDate.size}/${habitsForDate.length} hábitos`
+                : 'Nenhum hábito programado'}
             </span>
           </div>
-          {todaysHabits.length > 0 && <Progress value={progresso * 100} className="mt-1.5" />}
+          {habitsForDate.length > 0 && <Progress value={progresso * 100} className="mt-1.5" />}
         </div>
         <Button variant="outline" size="sm" onClick={() => setManageOpen(true)}>
           <Settings className="size-4" />
@@ -98,23 +130,23 @@ export function HojeTab() {
         <EmptyState message="Nenhum hábito cadastrado ainda. Toque em Gerenciar pra criar o primeiro." />
       )}
 
-      {!isLoading && habits.length > 0 && todaysHabits.length === 0 && (
-        <EmptyState message="Nenhum hábito programado para hoje." />
+      {!isLoading && habits.length > 0 && habitsForDate.length === 0 && (
+        <EmptyState message="Nenhum hábito programado para este dia." />
       )}
 
-      {todaysHabits.length > 0 && (
+      {habitsForDate.length > 0 && (
         <Card className="animate-fade-in-up">
           <CardContent className="flex flex-col divide-y p-0">
-            {todaysHabits.map((habit) => (
+            {habitsForDate.map((habit) => (
               <HabitRow
                 key={habit.id}
                 habit={habit}
-                isDoneToday={doneToday.has(habit.id)}
+                isDone={doneOnDate.has(habit.id)}
                 streak={streaks.get(habit.id)?.current ?? 0}
                 longestStreak={streaks.get(habit.id)?.longest ?? 0}
                 justConfirmed={justConfirmed.has(habit.id)}
                 pending={toggleLog.isPending}
-                onToggle={() => handleToggle(habit.id, !doneToday.has(habit.id))}
+                onToggle={() => handleToggle(habit.id, !doneOnDate.has(habit.id))}
               />
             ))}
           </CardContent>
