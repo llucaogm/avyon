@@ -22,18 +22,25 @@ export default function ForecastPage() {
     return base + delta
   }, [settings?.saldo_atual_conta, txSinceReconciliation])
 
-  const avulsoAtual = useMemo(() => {
-    const avulso = currentMonthTransactions.filter((t) => !t.expense_category_id && !t.income_category_id)
-    return {
-      saidas: avulso.reduce((sum, t) => sum + t.valor_saida, 0),
-      entradas: avulso.reduce((sum, t) => sum + t.valor_entrada, 0),
-    }
-  }, [currentMonthTransactions])
+  const currentMonthActual = useMemo(
+    () => ({
+      entradas: currentMonthTransactions.reduce((sum, t) => sum + t.valor_entrada, 0),
+      saidas: currentMonthTransactions.reduce((sum, t) => sum + t.valor_saida, 0),
+    }),
+    [currentMonthTransactions],
+  )
+
+  // saldoAtual already reflects this month's real transactions (via txSinceReconciliation),
+  // so back them out here — computeForecast re-adds the full month via currentMonthActual.
+  const saldoInicioMes = useMemo(
+    () => saldoAtual - (currentMonthActual.entradas - currentMonthActual.saidas),
+    [saldoAtual, currentMonthActual],
+  )
 
   const forecast = useMemo(() => {
     if (!settings) return []
-    return computeForecast(expenseCategories, incomeCategories, saldoAtual, 12, new Date(), avulsoAtual)
-  }, [expenseCategories, incomeCategories, saldoAtual, avulsoAtual, settings])
+    return computeForecast(expenseCategories, incomeCategories, saldoInicioMes, 12, new Date(), currentMonthActual)
+  }, [expenseCategories, incomeCategories, saldoInicioMes, currentMonthActual, settings])
 
   const chartData = forecast.map((m) => ({
     mes: formatMonthLabel(m.monthDate),
@@ -47,8 +54,8 @@ export default function ForecastPage() {
       <div>
         <h1 className="font-display text-2xl font-semibold">Projeção Futura</h1>
         <p className="text-sm text-muted-foreground">
-          Próximos 12 meses, a partir do saldo atual (já contando o que você lançou) e das
-          categorias fixas cadastradas — este mês também soma os lançamentos avulsos.
+          O mês atual mostra tudo que você já lançou (entradas e saídas reais); os próximos
+          12 meses são projetados a partir das categorias fixas cadastradas.
         </p>
       </div>
 
