@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Progress } from '@/shared/components/ui/progress'
@@ -14,7 +14,14 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/shared/components/ui/dialog'
-import { useGoals, useGoalContributions, useCreateGoal, useAddGoalContribution } from '@/modules/financeiro/hooks/useGoals'
+import {
+  useGoals,
+  useGoalContributions,
+  useCreateGoal,
+  useUpdateGoal,
+  useDeleteGoal,
+  useAddGoalContribution,
+} from '@/modules/financeiro/hooks/useGoals'
 import { AnimatedCurrency } from '@/modules/financeiro/components/common/AnimatedCurrency'
 import { formatCurrency, formatPercent } from '@/shared/lib/formatters'
 import { todayIso } from '@/modules/financeiro/lib/monthUtils'
@@ -26,7 +33,9 @@ import type { Tables } from '@/shared/types/database.types'
 export default function GoalsPage() {
   const { data: goals = [], isLoading } = useGoals()
   const { data: contributions = [] } = useGoalContributions()
-  const [newGoalOpen, setNewGoalOpen] = useState(false)
+  const deleteGoal = useDeleteGoal()
+  const [formOpen, setFormOpen] = useState(false)
+  const [editingGoal, setEditingGoal] = useState<Tables<'goals'> | undefined>()
   const [contributingTo, setContributingTo] = useState<Tables<'goals'> | null>(null)
 
   const savedByGoal = useMemo(() => {
@@ -41,7 +50,13 @@ export default function GoalsPage() {
     <div className="flex flex-col gap-4">
       <div className="flex items-start justify-between">
         <h1 className="font-display text-2xl font-semibold">Meus Objetivos</h1>
-        <Button size="sm" onClick={() => setNewGoalOpen(true)}>
+        <Button
+          size="sm"
+          onClick={() => {
+            setEditingGoal(undefined)
+            setFormOpen(true)
+          }}
+        >
           <Plus className="size-4" />
           Novo objetivo
         </Button>
@@ -68,6 +83,29 @@ export default function GoalsPage() {
             >
               <CardHeader>
                 <CardTitle className="font-display text-base">{g.nome}</CardTitle>
+                <CardAction className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setEditingGoal(g)
+                      setFormOpen(true)
+                    }}
+                  >
+                    <Pencil className="size-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() =>
+                      deleteGoal.mutate(g.id, {
+                        onError: () => toast.error('Não consegui excluir esse objetivo'),
+                      })
+                    }
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </CardAction>
               </CardHeader>
               <CardContent className="flex flex-col gap-3">
                 <Progress value={progresso * 100} className="[&>div]:bg-group-objetivo" />
@@ -97,37 +135,54 @@ export default function GoalsPage() {
         })}
       </div>
 
-      <NewGoalDialog open={newGoalOpen} onOpenChange={setNewGoalOpen} />
+      <GoalFormDialog open={formOpen} onOpenChange={setFormOpen} goal={editingGoal} />
       <ContributionDialog goal={contributingTo} onOpenChange={(v) => !v && setContributingTo(null)} />
     </div>
   )
 }
 
-function NewGoalDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+function GoalFormDialog({
+  open,
+  onOpenChange,
+  goal,
+}: {
+  open: boolean
+  onOpenChange: (v: boolean) => void
+  goal?: Tables<'goals'>
+}) {
   const createGoal = useCreateGoal()
+  const updateGoal = useUpdateGoal()
+  const isEditing = !!goal
   const [nome, setNome] = useState('')
   const [valorTotal, setValorTotal] = useState('')
   const [prazo, setPrazo] = useState('12')
 
   useEffect(() => {
     if (open) {
-      setNome('')
-      setValorTotal('')
-      setPrazo('12')
+      setNome(goal?.nome ?? '')
+      setValorTotal(goal ? String(goal.valor_total) : '')
+      setPrazo(goal ? String(goal.prazo_meses) : '12')
     }
-  }, [open])
+  }, [open, goal])
 
   async function handleSave() {
     if (!nome || !valorTotal) return
     try {
-      await createGoal.mutateAsync({
+      const payload = {
         nome,
         valor_total: Number(valorTotal),
         prazo_meses: Number(prazo) || 1,
-      })
+      }
+      if (isEditing) {
+        await updateGoal.mutateAsync({ id: goal.id, values: payload })
+        toast.success('Objetivo atualizado')
+      } else {
+        await createGoal.mutateAsync(payload)
+        toast.success('Objetivo criado')
+      }
       onOpenChange(false)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'Erro ao criar objetivo'))
+      toast.error(getErrorMessage(err, 'Erro ao salvar objetivo'))
     }
   }
 
@@ -135,7 +190,7 @@ function NewGoalDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Novo objetivo</DialogTitle>
+          <DialogTitle>{isEditing ? 'Editar objetivo' : 'Novo objetivo'}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-4">
           <FormField label="Nome do objetivo" htmlFor="nome">
@@ -155,7 +210,7 @@ function NewGoalDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v
           </FormField>
         </div>
         <DialogFooter>
-          <SubmitButton pending={createGoal.isPending} onClick={handleSave}>
+          <SubmitButton pending={createGoal.isPending || updateGoal.isPending} onClick={handleSave}>
             Salvar
           </SubmitButton>
         </DialogFooter>

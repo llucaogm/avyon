@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/shared/lib/supabaseClient'
 import { useAuth } from '@/shared/context/AuthProvider'
 import { requireUser } from '@/shared/lib/errors'
-import type { TablesInsert } from '@/shared/types/database.types'
+import type { TablesInsert, TablesUpdate } from '@/shared/types/database.types'
 
 export function useGoals() {
   const { user } = useAuth()
@@ -47,6 +47,37 @@ export function useCreateGoal() {
     },
     meta: { action: 'goal.create' },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['goals', user?.id] }),
+  })
+}
+
+export function useUpdateGoal() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, values }: { id: string; values: TablesUpdate<'goals'> }) => {
+      const { error } = await supabase.from('goals').update(values).eq('id', id)
+      if (error) throw error
+    },
+    meta: { action: 'goal.update' },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['goals', user?.id] }),
+  })
+}
+
+export function useDeleteGoal() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('goals').delete().eq('id', id)
+      if (error) throw error
+    },
+    meta: { action: 'goal.delete' },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals', user?.id] })
+      queryClient.invalidateQueries({ queryKey: ['goal_contributions', user?.id] })
+    },
   })
 }
 
