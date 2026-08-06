@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Plus, Pencil, Trash2, ChevronUp, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
-import { Card, CardContent } from '@/shared/components/ui/card'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/shared/components/ui/sheet'
 import { Button } from '@/shared/components/ui/button'
 import { LoadingState } from '@/shared/components/common/LoadingState'
 import { EmptyState } from '@/shared/components/common/EmptyState'
@@ -19,7 +19,7 @@ function frequencyLabel(habit: Tables<'habits'>): string {
   return days.map((d) => WEEKDAY_LABELS[d]).join(', ')
 }
 
-export default function HabitsManagePage() {
+export function HabitsManageSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
   const { data: habits = [], isLoading } = useHabits()
   const updateHabit = useUpdateHabit()
   const deactivateHabit = useDeactivateHabit()
@@ -32,42 +32,44 @@ export default function HabitsManagePage() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-start justify-between">
-        <h1 className="font-display text-2xl font-semibold">Gerenciar hábitos</h1>
-        <Button
-          size="sm"
-          onClick={() => {
-            setEditing(undefined)
-            setDialogOpen(true)
-          }}
-        >
-          <Plus className="size-4" />
-          Novo hábito
-        </Button>
-      </div>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>Gerenciar hábitos</SheetTitle>
+        </SheetHeader>
+        <div className="flex flex-col gap-4 px-4 pb-6">
+          <div className="flex justify-end">
+            <Button
+              size="sm"
+              onClick={() => {
+                setEditing(undefined)
+                setDialogOpen(true)
+              }}
+            >
+              <Plus className="size-4" />
+              Novo hábito
+            </Button>
+          </div>
 
-      {isLoading && <LoadingState />}
+          {isLoading && <LoadingState />}
 
-      {!isLoading && habits.length === 0 && (
-        <EmptyState message="Nenhum hábito cadastrado ainda. Adicione o primeiro." />
-      )}
+          {!isLoading && habits.length === 0 && (
+            <EmptyState message="Nenhum hábito cadastrado ainda. Adicione o primeiro." />
+          )}
 
-      {habits.length > 0 && (
-        <Card>
-          <CardContent className="flex flex-col divide-y p-0">
-            {habits.map((habit, index) => {
-              const Icon = getHabitIcon(habit.icone)
-              return (
-                <div key={habit.id} className="flex items-center gap-3 p-3">
-                  <span className="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-full">
-                    <Icon className="size-4" />
-                  </span>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{habit.nome}</p>
-                    <p className="text-xs text-muted-foreground">{frequencyLabel(habit)}</p>
-                  </div>
-                  <div className="flex gap-1">
+          {habits.length > 0 && (
+            <div className="flex flex-col divide-y">
+              {habits.map((habit, index) => {
+                const Icon = getHabitIcon(habit.icone)
+                return (
+                  <div key={habit.id} className="flex items-center gap-2 py-2">
+                    <span className="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-full">
+                      <Icon className="size-4" />
+                    </span>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{habit.nome}</p>
+                      <p className="text-xs text-muted-foreground">{frequencyLabel(habit)}</p>
+                    </div>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -106,14 +108,14 @@ export default function HabitsManagePage() {
                       <Trash2 className="size-4" />
                     </Button>
                   </div>
-                </div>
-              )
-            })}
-          </CardContent>
-        </Card>
-      )}
+                )
+              })}
+            </div>
+          )}
+        </div>
 
-      <HabitFormDialog open={dialogOpen} onOpenChange={setDialogOpen} habit={editing} />
-    </div>
+        <HabitFormDialog open={dialogOpen} onOpenChange={setDialogOpen} habit={editing} />
+      </SheetContent>
+    </Sheet>
   )
 }

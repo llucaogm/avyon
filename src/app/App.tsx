@@ -20,8 +20,7 @@ import ForecastPage from '@/modules/financeiro/pages/ForecastPage'
 import HowToUsePage from '@/modules/financeiro/pages/HowToUsePage'
 
 import { HabitosShell } from '@/modules/habitos/components/layout/HabitosShell'
-import TodayPage from '@/modules/habitos/pages/TodayPage'
-import HabitsManagePage from '@/modules/habitos/pages/HabitsManagePage'
+import HabitosPage from '@/modules/habitos/pages/HabitosPage'
 
 function App() {
   return (
@@ -47,8 +46,7 @@ function App() {
                 </Route>
 
                 <Route path="/habitos" element={<HabitosShell />}>
-                  <Route index element={<TodayPage />} />
-                  <Route path="habits" element={<HabitsManagePage />} />
+                  <Route index element={<HabitosPage />} />
                 </Route>
               </Route>
             </Route>

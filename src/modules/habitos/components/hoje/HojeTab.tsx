@@ -1,22 +1,29 @@
 import { useMemo, useRef, useState } from 'react'
+import { Settings } from 'lucide-react'
 import { toast } from 'sonner'
 import { Card, CardContent } from '@/shared/components/ui/card'
+import { Button } from '@/shared/components/ui/button'
+import { Progress } from '@/shared/components/ui/progress'
 import { LoadingState } from '@/shared/components/common/LoadingState'
 import { EmptyState } from '@/shared/components/common/EmptyState'
 import { useHabits } from '@/modules/habitos/hooks/useHabits'
 import { useHabitLogs, useToggleHabitLog } from '@/modules/habitos/hooks/useHabitLogs'
 import { useHabitStreaks } from '@/modules/habitos/hooks/useHabitStreaks'
 import { HabitRow } from '@/modules/habitos/components/HabitRow'
+import { HabitsManageSheet } from '@/modules/habitos/components/hoje/HabitsManageSheet'
 import { isHabitScheduledOn } from '@/modules/habitos/lib/habitSchedule'
 import { todayIso } from '@/modules/habitos/lib/dateUtils'
 import { getErrorMessage } from '@/shared/lib/errors'
 
-export default function TodayPage() {
+const MILESTONES = [7, 30, 100]
+
+export function HojeTab() {
   const { data: habits = [], isLoading: loadingHabits } = useHabits()
   const { data: logs = [], isLoading: loadingLogs } = useHabitLogs()
   const toggleLog = useToggleHabitLog()
   const streaks = useHabitStreaks(habits, logs)
   const [justConfirmed, setJustConfirmed] = useState<Set<string>>(new Set())
+  const [manageOpen, setManageOpen] = useState(false)
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>())
 
   const today = todayIso()
@@ -26,6 +33,8 @@ export default function TodayPage() {
     () => habits.filter((h) => isHabitScheduledOn(h, new Date())),
     [habits],
   )
+
+  const progresso = todaysHabits.length > 0 ? doneToday.size / todaysHabits.length : 0
 
   function playConfirmMoment(habitId: string) {
     setJustConfirmed((prev) => new Set(prev).add(habitId))
@@ -48,7 +57,14 @@ export default function TodayPage() {
       { habitId, date: today, logged },
       {
         onSuccess: () => {
-          if (logged) playConfirmMoment(habitId)
+          if (!logged) return
+          playConfirmMoment(habitId)
+          const current = streaks.get(habitId)?.current ?? 0
+          const newStreak = current + 1
+          if (MILESTONES.includes(newStreak)) {
+            const habitNome = habits.find((h) => h.id === habitId)?.nome ?? 'hábito'
+            toast.success(`${newStreak} dias seguidos em ${habitNome}! 🔥`)
+          }
         },
         onError: (err) => toast.error(getErrorMessage(err, 'Não consegui salvar essa marcação')),
       },
@@ -59,12 +75,27 @@ export default function TodayPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="font-display text-2xl font-semibold">Hoje</h1>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">
+              {todaysHabits.length > 0
+                ? `${doneToday.size}/${todaysHabits.length} hábitos hoje`
+                : 'Nenhum hábito programado para hoje'}
+            </span>
+          </div>
+          {todaysHabits.length > 0 && <Progress value={progresso * 100} className="mt-1.5" />}
+        </div>
+        <Button variant="outline" size="sm" onClick={() => setManageOpen(true)}>
+          <Settings className="size-4" />
+          Gerenciar
+        </Button>
+      </div>
 
       {isLoading && <LoadingState />}
 
       {!isLoading && habits.length === 0 && (
-        <EmptyState message="Nenhum hábito cadastrado ainda. Crie o primeiro em Gerenciar." />
+        <EmptyState message="Nenhum hábito cadastrado ainda. Toque em Gerenciar pra criar o primeiro." />
       )}
 
       {!isLoading && habits.length > 0 && todaysHabits.length === 0 && (
@@ -80,6 +111,7 @@ export default function TodayPage() {
                 habit={habit}
                 isDoneToday={doneToday.has(habit.id)}
                 streak={streaks.get(habit.id)?.current ?? 0}
+                longestStreak={streaks.get(habit.id)?.longest ?? 0}
                 justConfirmed={justConfirmed.has(habit.id)}
                 pending={toggleLog.isPending}
                 onToggle={() => handleToggle(habit.id, !doneToday.has(habit.id))}
@@ -88,6 +120,8 @@ export default function TodayPage() {
           </CardContent>
         </Card>
       )}
+
+      <HabitsManageSheet open={manageOpen} onOpenChange={setManageOpen} />
     </div>
   )
 }

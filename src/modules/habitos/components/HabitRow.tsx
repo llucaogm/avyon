@@ -9,12 +9,21 @@ interface HabitRowProps {
   habit: Tables<'habits'>
   isDoneToday: boolean
   streak: number
+  longestStreak: number
   justConfirmed: boolean
   pending: boolean
   onToggle: () => void
 }
 
-export function HabitRow({ habit, isDoneToday, streak, justConfirmed, pending, onToggle }: HabitRowProps) {
+export function HabitRow({
+  habit,
+  isDoneToday,
+  streak,
+  longestStreak,
+  justConfirmed,
+  pending,
+  onToggle,
+}: HabitRowProps) {
   const Icon = getHabitIcon(habit.icone)
 
   return (
@@ -27,7 +36,7 @@ export function HabitRow({ habit, isDoneToday, streak, justConfirmed, pending, o
       </span>
       <div className="flex flex-1 items-center gap-2">
         <span className="text-sm font-medium">{habit.nome}</span>
-        <StreakBadge streak={streak} />
+        <StreakBadge streak={streak} longest={longestStreak} />
       </div>
       {justConfirmed ? (
         <ConfirmCheck color="var(--primary)" />

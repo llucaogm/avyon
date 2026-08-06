@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      agua_logs: {
+        Row: {
+          created_at: string
+          data: string
+          id: string
+          ml: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: string
+          id?: string
+          ml: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          id?: string
+          ml?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           created_at: string
@@ -331,6 +355,27 @@ export type Database = {
           },
         ]
       }
+      habitos_config: {
+        Row: {
+          created_at: string
+          meta_agua_ml: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          meta_agua_ml?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          meta_agua_ml?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       habits: {
         Row: {
           created_at: string
@@ -413,6 +458,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      peso_logs: {
+        Row: {
+          created_at: string
+          data: string
+          id: string
+          peso_kg: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data?: string
+          id?: string
+          peso_kg: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          id?: string
+          peso_kg?: number
+          user_id?: string
+        }
+        Relationships: []
       }
       transactions: {
         Row: {
