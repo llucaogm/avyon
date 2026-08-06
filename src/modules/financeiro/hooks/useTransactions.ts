@@ -4,7 +4,7 @@ import { supabase } from '@/shared/lib/supabaseClient'
 import { useAuth } from '@/shared/context/AuthProvider'
 import { monthRange } from '@/modules/financeiro/lib/monthUtils'
 import { requireUser } from '@/shared/lib/errors'
-import type { TablesInsert } from '@/shared/types/database.types'
+import type { TablesInsert, TablesUpdate } from '@/shared/types/database.types'
 
 export function useMonthTransactions(monthDate: Date) {
   const { user } = useAuth()
@@ -78,6 +78,20 @@ export function useCreateTransaction() {
       if (error) throw error
     },
     meta: { action: 'transaction.create' },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] }),
+  })
+}
+
+export function useUpdateTransaction() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, values }: { id: string; values: TablesUpdate<'transactions'> }) => {
+      const { error } = await supabase.from('transactions').update(values).eq('id', id)
+      if (error) throw error
+    },
+    meta: { action: 'transaction.update' },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] }),
   })
 }

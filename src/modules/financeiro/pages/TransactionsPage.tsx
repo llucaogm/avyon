@@ -1,10 +1,11 @@
-import { useMemo, type CSSProperties } from 'react'
-import { Trash2, ArrowDownCircle, ArrowUpCircle } from 'lucide-react'
+import { useMemo, useState, type CSSProperties } from 'react'
+import { Trash2, Pencil, ArrowDownCircle, ArrowUpCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import { Button } from '@/shared/components/ui/button'
 import { MonthSwitcher } from '@/modules/financeiro/components/layout/MonthSwitcher'
 import { AnimatedCurrency } from '@/modules/financeiro/components/common/AnimatedCurrency'
+import { QuickAddSheet } from '@/modules/financeiro/components/transactions/QuickAddSheet'
 import { useMonth } from '@/modules/financeiro/context/MonthProvider'
 import { useMonthTransactions, useDeleteTransaction } from '@/modules/financeiro/hooks/useTransactions'
 import { useExpenseCategories, useIncomeCategories } from '@/modules/financeiro/hooks/useCategories'
@@ -12,6 +13,7 @@ import { useCategorias } from '@/modules/financeiro/hooks/useCategorias'
 import { formatCurrency, formatDate } from '@/shared/lib/formatters'
 import { LoadingState } from '@/shared/components/common/LoadingState'
 import { EmptyState } from '@/shared/components/common/EmptyState'
+import type { Tables } from '@/shared/types/database.types'
 
 export default function TransactionsPage() {
   const { selectedMonth } = useMonth()
@@ -21,6 +23,7 @@ export default function TransactionsPage() {
   const { data: categoriasDespesa = [] } = useCategorias('despesa')
   const { data: categoriasReceita = [] } = useCategorias('receita')
   const deleteTransaction = useDeleteTransaction()
+  const [editingTransaction, setEditingTransaction] = useState<Tables<'transactions'> | null>(null)
 
   const categoryNameById = useMemo(() => {
     const map = new Map<string, string>()
@@ -132,6 +135,9 @@ export default function TransactionsPage() {
                         {isEntrada ? '+' : '-'}
                         {formatCurrency(isEntrada ? t.valor_entrada : t.valor_saida)}
                       </span>
+                      <Button variant="ghost" size="icon" onClick={() => setEditingTransaction(t)}>
+                        <Pencil className="size-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -151,6 +157,12 @@ export default function TransactionsPage() {
           </Card>
         </div>
       ))}
+
+      <QuickAddSheet
+        open={!!editingTransaction}
+        onOpenChange={(v) => !v && setEditingTransaction(null)}
+        transaction={editingTransaction ?? undefined}
+      />
     </div>
   )
 }

@@ -20,12 +20,17 @@ import {
 } from '@/shared/components/ui/select'
 import { useExpenseCategories, useIncomeCategories } from '@/modules/financeiro/hooks/useCategories'
 import { useCategorias } from '@/modules/financeiro/hooks/useCategorias'
-import { useCreateTransaction, useRecentTransactions } from '@/modules/financeiro/hooks/useTransactions'
+import {
+  useCreateTransaction,
+  useUpdateTransaction,
+  useRecentTransactions,
+} from '@/modules/financeiro/hooks/useTransactions'
 import { suggestCategory } from '@/modules/financeiro/lib/categorySuggest'
 import { todayIso } from '@/modules/financeiro/lib/monthUtils'
 import { getErrorMessage } from '@/shared/lib/errors'
 import { FormField } from '@/shared/components/common/FormField'
 import { SubmitButton } from '@/shared/components/common/SubmitButton'
+import type { Tables } from '@/shared/types/database.types'
 
 const paymentMethods = ['Débito', 'Crédito', 'Pix', 'Dinheiro', 'Outro']
 
@@ -51,15 +56,42 @@ type FormOutput = z.output<typeof schema>
 interface QuickAddSheetProps {
   open: boolean
   onOpenChange: (v: boolean) => void
+  transaction?: Tables<'transactions'>
 }
 
-export function QuickAddSheet({ open, onOpenChange }: QuickAddSheetProps) {
+function defaultValuesFor(transaction: Tables<'transactions'> | undefined): FormInput {
+  if (!transaction) {
+    return {
+      tipo: 'saida',
+      valor: undefined,
+      descricao: '',
+      categoryId: undefined,
+      categoriaId: undefined,
+      data: todayIso(),
+      formaPagamento: undefined,
+    }
+  }
+  const isEntrada = transaction.valor_entrada > 0
+  return {
+    tipo: isEntrada ? 'entrada' : 'saida',
+    valor: isEntrada ? transaction.valor_entrada : transaction.valor_saida,
+    descricao: transaction.descricao,
+    categoryId: transaction.expense_category_id ?? transaction.income_category_id ?? undefined,
+    categoriaId: transaction.categoria_id ?? undefined,
+    data: transaction.data,
+    formaPagamento: transaction.forma_pagamento ?? undefined,
+  }
+}
+
+export function QuickAddSheet({ open, onOpenChange, transaction }: QuickAddSheetProps) {
+  const isEditing = !!transaction
   const { data: expenseCategories = [] } = useExpenseCategories()
   const { data: incomeCategories = [] } = useIncomeCategories()
   const { data: categoriasDespesa = [] } = useCategorias('despesa')
   const { data: categoriasReceita = [] } = useCategorias('receita')
   const { data: recentTransactions = [] } = useRecentTransactions()
   const createTransaction = useCreateTransaction()
+  const updateTransaction = useUpdateTransaction()
   const [autoSuggestedFixo, setAutoSuggestedFixo] = useState(false)
   const [autoSuggestedCategoria, setAutoSuggestedCategoria] = useState(false)
 
@@ -73,15 +105,7 @@ export function QuickAddSheet({ open, onOpenChange }: QuickAddSheetProps) {
     formState: { errors },
   } = useForm<FormInput, unknown, FormOutput>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      tipo: 'saida',
-      valor: undefined,
-      descricao: '',
-      categoryId: undefined,
-      categoriaId: undefined,
-      data: todayIso(),
-      formaPagamento: undefined,
-    },
+    defaultValues: defaultValuesFor(transaction),
   })
 
   const tipo = watch('tipo')
@@ -113,17 +137,20 @@ export function QuickAddSheet({ open, onOpenChange }: QuickAddSheetProps) {
     }
   }, [categoriaSuggestion, autoSuggestedCategoria, setValue])
 
+  // Reset (not clear) on open — loads the transaction being edited, or blank
+  // defaults for a new one. Auto-suggest is pre-armed as "already suggested"
+  // when editing, so it never overwrites the categorization already saved.
   useEffect(() => {
-    if (!open) {
-      reset()
-      setAutoSuggestedFixo(false)
-      setAutoSuggestedCategoria(false)
+    if (open) {
+      reset(defaultValuesFor(transaction))
+      setAutoSuggestedFixo(isEditing)
+      setAutoSuggestedCategoria(isEditing)
     }
-  }, [open, reset])
+  }, [open, transaction, isEditing, reset])
 
   async function onSubmit(values: FormOutput) {
     try {
-      await createTransaction.mutateAsync({
+      const payload = {
         data: values.data,
         descricao: values.descricao,
         valor_entrada: values.tipo === 'entrada' ? values.valor : 0,
@@ -132,8 +159,14 @@ export function QuickAddSheet({ open, onOpenChange }: QuickAddSheetProps) {
         income_category_id: values.tipo === 'entrada' ? values.categoryId ?? null : null,
         categoria_id: values.categoriaId ?? null,
         forma_pagamento: values.formaPagamento ?? null,
-      })
-      toast.success('Lançamento adicionado')
+      }
+      if (isEditing) {
+        await updateTransaction.mutateAsync({ id: transaction.id, values: payload })
+        toast.success('Lançamento atualizado')
+      } else {
+        await createTransaction.mutateAsync(payload)
+        toast.success('Lançamento adicionado')
+      }
       onOpenChange(false)
     } catch (err) {
       toast.error(getErrorMessage(err, 'Erro ao salvar'))
@@ -144,7 +177,7 @@ export function QuickAddSheet({ open, onOpenChange }: QuickAddSheetProps) {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="max-h-[90vh] overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>Novo lançamento</SheetTitle>
+          <SheetTitle>{isEditing ? 'Editar lançamento' : 'Novo lançamento'}</SheetTitle>
         </SheetHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 px-4 pb-6">
           <Controller
@@ -223,7 +256,7 @@ export function QuickAddSheet({ open, onOpenChange }: QuickAddSheetProps) {
                 </Select>
               )}
             />
-            {categoriaSuggestion && (
+            {categoriaSuggestion && !isEditing && (
               <p className="text-xs text-muted-foreground">Categoria sugerida com base no histórico</p>
             )}
           </FormField>
@@ -277,7 +310,7 @@ export function QuickAddSheet({ open, onOpenChange }: QuickAddSheetProps) {
             />
           </FormField>
 
-          <SubmitButton pending={createTransaction.isPending} className="mt-2">
+          <SubmitButton pending={createTransaction.isPending || updateTransaction.isPending} className="mt-2">
             Salvar
           </SubmitButton>
         </form>
