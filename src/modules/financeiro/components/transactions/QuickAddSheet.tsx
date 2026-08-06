@@ -19,8 +19,9 @@ import {
   SelectValue,
 } from '@/shared/components/ui/select'
 import { useExpenseCategories, useIncomeCategories } from '@/modules/financeiro/hooks/useCategories'
+import { useCategorias } from '@/modules/financeiro/hooks/useCategorias'
 import { useCreateTransaction, useRecentTransactions } from '@/modules/financeiro/hooks/useTransactions'
-import { suggestExpenseCategory } from '@/modules/financeiro/lib/categorySuggest'
+import { suggestCategory } from '@/modules/financeiro/lib/categorySuggest'
 import { todayIso } from '@/modules/financeiro/lib/monthUtils'
 import { getErrorMessage } from '@/shared/lib/errors'
 import { FormField } from '@/shared/components/common/FormField'
@@ -28,14 +29,21 @@ import { SubmitButton } from '@/shared/components/common/SubmitButton'
 
 const paymentMethods = ['Débito', 'Crédito', 'Pix', 'Dinheiro', 'Outro']
 
-const schema = z.object({
-  tipo: z.enum(['entrada', 'saida']),
-  valor: z.coerce.number().positive('Informe um valor maior que zero'),
-  descricao: z.string().min(1, 'Descreva o lançamento'),
-  categoryId: z.string().optional(),
-  data: z.string().min(1),
-  formaPagamento: z.string().optional(),
-})
+const schema = z
+  .object({
+    tipo: z.enum(['entrada', 'saida']),
+    valor: z.coerce.number().positive('Informe um valor maior que zero'),
+    descricao: z.string().min(1, 'Descreva o lançamento'),
+    categoryId: z.string().optional(),
+    categoriaId: z.string().optional(),
+    data: z.string().min(1),
+    formaPagamento: z.string().optional(),
+  })
+  .superRefine((values, ctx) => {
+    if (!values.categoriaId) {
+      ctx.addIssue({ path: ['categoriaId'], code: z.ZodIssueCode.custom, message: 'Selecione uma categoria' })
+    }
+  })
 
 type FormInput = z.input<typeof schema>
 type FormOutput = z.output<typeof schema>
@@ -48,9 +56,12 @@ interface QuickAddSheetProps {
 export function QuickAddSheet({ open, onOpenChange }: QuickAddSheetProps) {
   const { data: expenseCategories = [] } = useExpenseCategories()
   const { data: incomeCategories = [] } = useIncomeCategories()
+  const { data: categoriasDespesa = [] } = useCategorias('despesa')
+  const { data: categoriasReceita = [] } = useCategorias('receita')
   const { data: recentTransactions = [] } = useRecentTransactions()
   const createTransaction = useCreateTransaction()
-  const [autoSuggested, setAutoSuggested] = useState(false)
+  const [autoSuggestedFixo, setAutoSuggestedFixo] = useState(false)
+  const [autoSuggestedCategoria, setAutoSuggestedCategoria] = useState(false)
 
   const {
     register,
@@ -67,6 +78,7 @@ export function QuickAddSheet({ open, onOpenChange }: QuickAddSheetProps) {
       valor: undefined,
       descricao: '',
       categoryId: undefined,
+      categoriaId: undefined,
       data: todayIso(),
       formaPagamento: undefined,
     },
@@ -75,24 +87,37 @@ export function QuickAddSheet({ open, onOpenChange }: QuickAddSheetProps) {
   const tipo = watch('tipo')
   const descricao = watch('descricao')
 
-  const categoryOptions = tipo === 'saida' ? expenseCategories : incomeCategories
+  const fixoOptions = tipo === 'saida' ? expenseCategories : incomeCategories
+  const categoriaOptions = tipo === 'saida' ? categoriasDespesa : categoriasReceita
+  const fixoField = tipo === 'saida' ? 'expense_category_id' : 'income_category_id'
 
-  const suggestion = useMemo(() => {
-    if (tipo !== 'saida') return null
-    return suggestExpenseCategory(descricao, recentTransactions)
-  }, [tipo, descricao, recentTransactions])
+  const fixoSuggestion = useMemo(() => {
+    return suggestCategory(descricao, recentTransactions, fixoField)
+  }, [descricao, recentTransactions, fixoField])
+
+  const categoriaSuggestion = useMemo(() => {
+    return suggestCategory(descricao, recentTransactions, 'categoria_id')
+  }, [descricao, recentTransactions])
 
   useEffect(() => {
-    if (suggestion && !autoSuggested) {
-      setValue('categoryId', suggestion)
-      setAutoSuggested(true)
+    if (fixoSuggestion && !autoSuggestedFixo) {
+      setValue('categoryId', fixoSuggestion)
+      setAutoSuggestedFixo(true)
     }
-  }, [suggestion, autoSuggested, setValue])
+  }, [fixoSuggestion, autoSuggestedFixo, setValue])
+
+  useEffect(() => {
+    if (categoriaSuggestion && !autoSuggestedCategoria) {
+      setValue('categoriaId', categoriaSuggestion)
+      setAutoSuggestedCategoria(true)
+    }
+  }, [categoriaSuggestion, autoSuggestedCategoria, setValue])
 
   useEffect(() => {
     if (!open) {
       reset()
-      setAutoSuggested(false)
+      setAutoSuggestedFixo(false)
+      setAutoSuggestedCategoria(false)
     }
   }, [open, reset])
 
@@ -105,6 +130,7 @@ export function QuickAddSheet({ open, onOpenChange }: QuickAddSheetProps) {
         valor_saida: values.tipo === 'saida' ? values.valor : 0,
         expense_category_id: values.tipo === 'saida' ? values.categoryId ?? null : null,
         income_category_id: values.tipo === 'entrada' ? values.categoryId ?? null : null,
+        categoria_id: values.categoriaId ?? null,
         forma_pagamento: values.formaPagamento ?? null,
       })
       toast.success('Lançamento adicionado')
@@ -132,7 +158,9 @@ export function QuickAddSheet({ open, onOpenChange }: QuickAddSheetProps) {
                   if (v) {
                     field.onChange(v)
                     setValue('categoryId', undefined)
-                    setAutoSuggested(false)
+                    setValue('categoriaId', undefined)
+                    setAutoSuggestedFixo(false)
+                    setAutoSuggestedCategoria(false)
                   }
                 }}
                 className="w-full"
@@ -172,17 +200,48 @@ export function QuickAddSheet({ open, onOpenChange }: QuickAddSheetProps) {
             </datalist>
           </FormField>
 
-          <FormField label="Categoria" htmlFor="categoryId">
+          <FormField label="Categoria" htmlFor="categoriaId" error={errors.categoriaId?.message}>
+            <Controller
+              control={control}
+              name="categoriaId"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="categoriaId" className="w-full">
+                    <SelectValue placeholder="Selecione uma categoria" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categoriaOptions.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        <span
+                          className="mr-1 inline-block size-2.5 rounded-full"
+                          style={{ backgroundColor: c.cor }}
+                        />
+                        {c.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {categoriaSuggestion && (
+              <p className="text-xs text-muted-foreground">Categoria sugerida com base no histórico</p>
+            )}
+          </FormField>
+
+          <FormField
+            label={tipo === 'saida' ? 'Gasto Fixo (opcional)' : 'Receita Fixa (opcional)'}
+            htmlFor="categoryId"
+          >
             <Controller
               control={control}
               name="categoryId"
               render={({ field }) => (
                 <Select value={field.value} onValueChange={field.onChange}>
                   <SelectTrigger id="categoryId" className="w-full">
-                    <SelectValue placeholder="Selecione uma categoria" />
+                    <SelectValue placeholder={tipo === 'saida' ? 'Nenhum' : 'Nenhuma'} />
                   </SelectTrigger>
                   <SelectContent>
-                    {categoryOptions.map((c) => (
+                    {fixoOptions.map((c) => (
                       <SelectItem key={c.id} value={c.id}>
                         {c.nome}
                       </SelectItem>
@@ -191,9 +250,6 @@ export function QuickAddSheet({ open, onOpenChange }: QuickAddSheetProps) {
                 </Select>
               )}
             />
-            {suggestion && tipo === 'saida' && (
-              <p className="text-xs text-muted-foreground">Categoria sugerida com base no histórico</p>
-            )}
           </FormField>
 
           <FormField label="Data" htmlFor="data">

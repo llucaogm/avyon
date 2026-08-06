@@ -8,6 +8,7 @@ import { AnimatedCurrency } from '@/modules/financeiro/components/common/Animate
 import { useMonth } from '@/modules/financeiro/context/MonthProvider'
 import { useMonthTransactions, useDeleteTransaction } from '@/modules/financeiro/hooks/useTransactions'
 import { useExpenseCategories, useIncomeCategories } from '@/modules/financeiro/hooks/useCategories'
+import { useCategorias } from '@/modules/financeiro/hooks/useCategorias'
 import { formatCurrency, formatDate } from '@/shared/lib/formatters'
 import { LoadingState } from '@/shared/components/common/LoadingState'
 import { EmptyState } from '@/shared/components/common/EmptyState'
@@ -17,6 +18,8 @@ export default function TransactionsPage() {
   const { data: transactions = [], isLoading } = useMonthTransactions(selectedMonth)
   const { data: expenseCategories = [] } = useExpenseCategories()
   const { data: incomeCategories = [] } = useIncomeCategories()
+  const { data: categoriasDespesa = [] } = useCategorias('despesa')
+  const { data: categoriasReceita = [] } = useCategorias('receita')
   const deleteTransaction = useDeleteTransaction()
 
   const categoryNameById = useMemo(() => {
@@ -25,6 +28,12 @@ export default function TransactionsPage() {
     for (const c of incomeCategories) map.set(c.id, c.nome)
     return map
   }, [expenseCategories, incomeCategories])
+
+  const categoriaById = useMemo(() => {
+    const map = new Map<string, { nome: string; cor: string }>()
+    for (const c of [...categoriasDespesa, ...categoriasReceita]) map.set(c.id, { nome: c.nome, cor: c.cor })
+    return map
+  }, [categoriasDespesa, categoriasReceita])
 
   const totals = useMemo(() => {
     const entradas = transactions.reduce((sum, t) => sum + t.valor_entrada, 0)
@@ -92,6 +101,7 @@ export default function TransactionsPage() {
                   : t.income_category_id
                     ? categoryNameById.get(t.income_category_id)
                     : null
+                const categoria = t.categoria_id ? categoriaById.get(t.categoria_id) : null
                 return (
                   <div
                     key={t.id}
@@ -105,9 +115,15 @@ export default function TransactionsPage() {
                       )}
                       <div>
                         <p className="text-sm font-medium">{t.descricao}</p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="flex items-center gap-1 text-xs text-muted-foreground">
                           {categoryName ?? 'Sem categoria'}
                           {t.forma_pagamento ? ` · ${t.forma_pagamento}` : ''}
+                          {categoria && (
+                            <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5">
+                              <span className="size-1.5 rounded-full" style={{ backgroundColor: categoria.cor }} />
+                              {categoria.nome}
+                            </span>
+                          )}
                         </p>
                       </div>
                     </div>

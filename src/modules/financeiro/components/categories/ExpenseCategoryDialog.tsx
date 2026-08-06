@@ -135,14 +135,14 @@ export function ExpenseCategoryDialog({
       }
       if (isEditing) {
         await updateCategory.mutateAsync({ id: category.id, values: payload })
-        toast.success('Categoria atualizada')
+        toast.success('Gasto fixo atualizado')
       } else {
         await createCategory.mutateAsync(payload)
-        toast.success('Categoria criada')
+        toast.success('Gasto fixo criado')
       }
       onOpenChange(false)
     } catch (err) {
-      toast.error(getErrorMessage(err, 'Erro ao salvar categoria'))
+      toast.error(getErrorMessage(err, 'Erro ao salvar gasto fixo'))
     }
   }
 
@@ -152,7 +152,7 @@ export function ExpenseCategoryDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEditing ? 'Editar despesa' : 'Nova categoria de despesa'}</DialogTitle>
+          <DialogTitle>{isEditing ? 'Editar gasto fixo' : 'Novo gasto fixo'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <FormField label="Nome" htmlFor="nome" error={errors.nome?.message}>

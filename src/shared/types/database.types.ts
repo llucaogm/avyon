@@ -44,6 +44,39 @@ export type Database = {
         }
         Relationships: []
       }
+      categorias: {
+        Row: {
+          cor: string
+          created_at: string
+          id: string
+          is_active: boolean
+          nome: string
+          ordem: number
+          tipo: Database["public"]["Enums"]["categoria_tipo"]
+          user_id: string
+        }
+        Insert: {
+          cor: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          nome: string
+          ordem?: number
+          tipo: Database["public"]["Enums"]["categoria_tipo"]
+          user_id: string
+        }
+        Update: {
+          cor?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          nome?: string
+          ordem?: number
+          tipo?: Database["public"]["Enums"]["categoria_tipo"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       category_month_status: {
         Row: {
           category_id: string
@@ -361,6 +394,7 @@ export type Database = {
       }
       transactions: {
         Row: {
+          categoria_id: string | null
           created_at: string
           data: string
           descricao: string
@@ -375,6 +409,7 @@ export type Database = {
           valor_saida: number
         }
         Insert: {
+          categoria_id?: string | null
           created_at?: string
           data?: string
           descricao: string
@@ -389,6 +424,7 @@ export type Database = {
           valor_saida?: number
         }
         Update: {
+          categoria_id?: string | null
           created_at?: string
           data?: string
           descricao?: string
@@ -403,6 +439,13 @@ export type Database = {
           valor_saida?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "transactions_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "transactions_expense_category_id_fkey"
             columns: ["expense_category_id"]
@@ -427,6 +470,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      categoria_tipo: "despesa" | "receita"
       category_group: "fixo" | "variavel" | "objetivo" | "reserva"
       expense_frequency: "mensal" | "anual" | "semestral" | "unico"
       habit_frequency: "diaria" | "dias_da_semana"
@@ -558,6 +602,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      categoria_tipo: ["despesa", "receita"],
       category_group: ["fixo", "variavel", "objetivo", "reserva"],
       expense_frequency: ["mensal", "anual", "semestral", "unico"],
       habit_frequency: ["diaria", "dias_da_semana"],

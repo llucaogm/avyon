@@ -12,6 +12,7 @@ import { FinanceiroShell } from '@/modules/financeiro/components/layout/Financei
 import DashboardPage from '@/modules/financeiro/pages/DashboardPage'
 import TransactionsPage from '@/modules/financeiro/pages/TransactionsPage'
 import BudgetPage from '@/modules/financeiro/pages/BudgetPage'
+import FixedExpensesPage from '@/modules/financeiro/pages/FixedExpensesPage'
 import CategoriesPage from '@/modules/financeiro/pages/CategoriesPage'
 import EmergencyFundPage from '@/modules/financeiro/pages/EmergencyFundPage'
 import GoalsPage from '@/modules/financeiro/pages/GoalsPage'
@@ -40,7 +41,8 @@ function App() {
                   <Route path="goals" element={<GoalsPage />} />
                   <Route path="forecast" element={<ForecastPage />} />
                   <Route path="emergency-fund" element={<EmergencyFundPage />} />
-                  <Route path="settings/categories" element={<CategoriesPage />} />
+                  <Route path="gastos-fixos" element={<FixedExpensesPage />} />
+                  <Route path="categorias" element={<CategoriesPage />} />
                   <Route path="como-usar" element={<HowToUsePage />} />
                 </Route>
 

@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, Receipt, PiggyBank, Target, TrendingUp, Shield, Tags, BookOpen } from 'lucide-react'
+import { LayoutDashboard, Receipt, PiggyBank, Target, TrendingUp, Shield, Tags, PieChart, BookOpen } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
 import { SlidingBottomNav, type SlidingBottomNavItem } from '@/shared/components/layout/SlidingBottomNav'
 import { QuickAddButton } from '@/modules/financeiro/components/transactions/QuickAddButton'
@@ -15,7 +15,8 @@ const primaryNav: SlidingBottomNavItem[] = [
 
 const secondaryNav: SlidingBottomNavItem[] = [
   { to: '/financeiro/emergency-fund', label: 'Reserva de Emergência', icon: Shield },
-  { to: '/financeiro/settings/categories', label: 'Categorias', icon: Tags },
+  { to: '/financeiro/gastos-fixos', label: 'Gastos Fixos', icon: Tags },
+  { to: '/financeiro/categorias', label: 'Categorias', icon: PieChart },
   { to: '/financeiro/como-usar', label: 'Como Usar', icon: BookOpen },
 ]
 
