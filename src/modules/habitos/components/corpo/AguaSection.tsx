@@ -1,13 +1,18 @@
-import { useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { format, subDays } from 'date-fns'
+import { Settings } from 'lucide-react'
 import { toast } from 'sonner'
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Button } from '@/shared/components/ui/button'
+import { Input } from '@/shared/components/ui/input'
 import { Progress } from '@/shared/components/ui/progress'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/shared/components/ui/dialog'
+import { FormField } from '@/shared/components/common/FormField'
+import { SubmitButton } from '@/shared/components/common/SubmitButton'
 import { ConfirmCheck } from '@/shared/components/common/ConfirmCheck'
 import { useCountUp } from '@/shared/hooks/useCountUp'
-import { useAguaLogs, useAddAguaLog, useAguaConfig } from '@/modules/habitos/hooks/useAgua'
+import { useAguaLogs, useAddAguaLog, useAguaConfig, useUpdateAguaConfig } from '@/modules/habitos/hooks/useAgua'
 import { todayIso } from '@/modules/habitos/lib/dateUtils'
 import { getErrorMessage } from '@/shared/lib/errors'
 
@@ -24,6 +29,7 @@ export function AguaSection() {
   const { data: config } = useAguaConfig()
   const addLog = useAddAguaLog()
   const [justAdded, setJustAdded] = useState(false)
+  const [configOpen, setConfigOpen] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   const today = todayIso()
@@ -56,8 +62,12 @@ export function AguaSection() {
 
   return (
     <Card className="animate-fade-in-up">
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="font-display text-base">Água</CardTitle>
+        <Button variant="outline" size="sm" onClick={() => setConfigOpen(true)}>
+          <Settings className="size-4" />
+          Meta
+        </Button>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <div
@@ -93,6 +103,54 @@ export function AguaSection() {
           </ResponsiveContainer>
         </div>
       </CardContent>
+
+      <ConfigMetaDialog open={configOpen} onOpenChange={setConfigOpen} />
     </Card>
+  )
+}
+
+function ConfigMetaDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+  const { data: config } = useAguaConfig()
+  const updateConfig = useUpdateAguaConfig()
+  const [meta, setMeta] = useState('')
+
+  useEffect(() => {
+    if (config && open) setMeta(String(config.meta_agua_ml))
+  }, [config, open])
+
+  async function handleSave() {
+    const parsed = Number(meta)
+    if (!meta || parsed <= 0) return
+    try {
+      await updateConfig.mutateAsync({ meta_agua_ml: parsed })
+      onOpenChange(false)
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Não consegui salvar a meta'))
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Meta diária de água</DialogTitle>
+        </DialogHeader>
+        <FormField label="Meta (ml)" htmlFor="meta-agua">
+          <Input
+            id="meta-agua"
+            type="number"
+            step="50"
+            value={meta}
+            onChange={(e) => setMeta(e.target.value)}
+            placeholder="2000"
+          />
+        </FormField>
+        <DialogFooter>
+          <SubmitButton pending={updateConfig.isPending} onClick={handleSave}>
+            Salvar
+          </SubmitButton>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
