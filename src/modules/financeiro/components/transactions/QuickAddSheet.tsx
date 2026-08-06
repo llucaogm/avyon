@@ -110,6 +110,7 @@ export function QuickAddSheet({ open, onOpenChange, transaction }: QuickAddSheet
 
   const tipo = watch('tipo')
   const descricao = watch('descricao')
+  const categoryId = watch('categoryId')
 
   const fixoOptions = tipo === 'saida' ? expenseCategories : incomeCategories
   const categoriaOptions = tipo === 'saida' ? categoriasDespesa : categoriasReceita
@@ -136,6 +137,18 @@ export function QuickAddSheet({ open, onOpenChange, transaction }: QuickAddSheet
       setAutoSuggestedCategoria(true)
     }
   }, [categoriaSuggestion, autoSuggestedCategoria, setValue])
+
+  // A Gasto Fixo/Receita Fixa can carry its own default Categoria — applying it
+  // when one is picked saves re-choosing the same tag every month. Only for new
+  // lançamentos: while editing, the transaction's own saved categoria_id already
+  // won and must not be silently swapped out just because its Gasto Fixo changed.
+  useEffect(() => {
+    if (isEditing || !categoryId) return
+    const fixo = fixoOptions.find((c) => c.id === categoryId)
+    if (fixo?.categoria_id) {
+      setValue('categoriaId', fixo.categoria_id)
+    }
+  }, [categoryId, fixoOptions, isEditing, setValue])
 
   // Reset (not clear) on open — loads the transaction being edited, or blank
   // defaults for a new one. Auto-suggest is pre-armed as "already suggested"

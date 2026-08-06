@@ -171,6 +171,7 @@ export type Database = {
       }
       expense_categories: {
         Row: {
+          categoria_id: string | null
           charge_date: string | null
           created_at: string
           due_month: number | null
@@ -186,6 +187,7 @@ export type Database = {
           valor_mensal: number
         }
         Insert: {
+          categoria_id?: string | null
           charge_date?: string | null
           created_at?: string
           due_month?: number | null
@@ -201,6 +203,7 @@ export type Database = {
           valor_mensal?: number
         }
         Update: {
+          categoria_id?: string | null
           charge_date?: string | null
           created_at?: string
           due_month?: number | null
@@ -215,7 +218,15 @@ export type Database = {
           user_id?: string
           valor_mensal?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "expense_categories_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       goal_contributions: {
         Row: {
@@ -358,6 +369,7 @@ export type Database = {
       }
       income_categories: {
         Row: {
+          categoria_id: string | null
           created_at: string
           id: string
           is_active: boolean
@@ -369,6 +381,7 @@ export type Database = {
           valor_mensal: number
         }
         Insert: {
+          categoria_id?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
@@ -380,6 +393,7 @@ export type Database = {
           valor_mensal?: number
         }
         Update: {
+          categoria_id?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
@@ -390,7 +404,15 @@ export type Database = {
           user_id?: string
           valor_mensal?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "income_categories_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transactions: {
         Row: {

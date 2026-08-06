@@ -10,6 +10,7 @@ export interface CategoryBudget {
   nome: string
   grupo: CategoryGroup
   frequencia: Tables<'expense_categories'>['frequencia']
+  categoriaId: string | null
   previsto: number
   realizado: number
 }
@@ -47,6 +48,7 @@ export function useMonthlyBudget(monthDate: Date) {
           nome: c.nome,
           grupo: c.grupo,
           frequencia: c.frequencia,
+          categoriaId: c.categoria_id,
           previsto: c.valor_mensal,
           realizado,
         }
@@ -84,6 +86,7 @@ export interface IncomeBudget {
   categoryId: string
   nome: string
   recorrencia: Tables<'income_categories'>['recorrencia']
+  categoriaId: string | null
   previsto: number
   recebido: number
 }
@@ -105,6 +108,7 @@ export function useMonthlyIncome(monthDate: Date) {
         categoryId: c.id,
         nome: c.nome,
         recorrencia: c.recorrencia,
+        categoriaId: c.categoria_id,
         previsto: c.valor_mensal,
         recebido,
       }

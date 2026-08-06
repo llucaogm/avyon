@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from '@/shared/components/ui/select'
 import { useCreateExpenseCategory, useUpdateExpenseCategory } from '@/modules/financeiro/hooks/useCategories'
+import { useCategorias } from '@/modules/financeiro/hooks/useCategorias'
 import { CATEGORY_GROUP_LABELS } from '@/modules/financeiro/lib/categoryGroups'
 import { getErrorMessage } from '@/shared/lib/errors'
 import { FormField } from '@/shared/components/common/FormField'
@@ -30,6 +31,7 @@ const schema = z.object({
   valor_mensal: z.coerce.number().min(0, 'Não pode ser negativo'),
   grupo: z.enum(['fixo', 'variavel', 'objetivo', 'reserva']),
   frequencia: z.enum(['mensal', 'anual', 'semestral', 'unico']),
+  categoria_id: z.string().optional(),
   due_month: z.string().optional(),
   charge_date: z.string().optional(),
   end_date: z.string().optional(),
@@ -71,6 +73,7 @@ export function ExpenseCategoryDialog({
 }: ExpenseCategoryDialogProps) {
   const createCategory = useCreateExpenseCategory()
   const updateCategory = useUpdateExpenseCategory()
+  const { data: categorias = [] } = useCategorias('despesa')
   const isEditing = !!category
 
   const { register, handleSubmit, control, watch, reset, formState: { errors } } = useForm<
@@ -84,6 +87,7 @@ export function ExpenseCategoryDialog({
       valor_mensal: 0,
       grupo: defaultGroup ?? 'fixo',
       frequencia: 'mensal',
+      categoria_id: undefined,
       due_month: undefined,
       charge_date: undefined,
       end_date: undefined,
@@ -102,6 +106,7 @@ export function ExpenseCategoryDialog({
               valor_mensal: category.valor_mensal,
               grupo: category.grupo,
               frequencia: category.frequencia,
+              categoria_id: category.categoria_id ?? undefined,
               due_month: category.due_month ? String(category.due_month) : undefined,
               charge_date: category.charge_date ?? undefined,
               end_date: category.end_date ?? undefined,
@@ -112,6 +117,7 @@ export function ExpenseCategoryDialog({
               valor_mensal: 0,
               grupo: defaultGroup ?? 'fixo',
               frequencia: 'mensal',
+              categoria_id: undefined,
               due_month: undefined,
               charge_date: undefined,
               end_date: undefined,
@@ -128,6 +134,7 @@ export function ExpenseCategoryDialog({
         valor_mensal: values.valor_mensal,
         grupo: values.grupo,
         frequencia: values.frequencia,
+        categoria_id: values.categoria_id || null,
         due_month: values.due_month ? Number(values.due_month) : null,
         charge_date: values.charge_date || null,
         end_date: values.end_date || null,
@@ -161,6 +168,34 @@ export function ExpenseCategoryDialog({
 
           <FormField label="Valor mensal (R$)" htmlFor="valor_mensal" error={errors.valor_mensal?.message}>
             <Input id="valor_mensal" type="number" step="0.01" {...register('valor_mensal')} />
+          </FormField>
+
+          <FormField label="Categoria (opcional)" htmlFor="categoria_id">
+            <Controller
+              control={control}
+              name="categoria_id"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="categoria_id" className="w-full">
+                    <SelectValue placeholder="Nenhuma" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categorias.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        <span
+                          className="mr-1 inline-block size-2.5 rounded-full"
+                          style={{ backgroundColor: c.cor }}
+                        />
+                        {c.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            <p className="text-xs text-muted-foreground">
+              Usada como sugestão automática ao confirmar o pagamento ou lançar avulso.
+            </p>
           </FormField>
 
           <div className="grid grid-cols-2 gap-4">

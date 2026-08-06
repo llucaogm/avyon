@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from '@/shared/components/ui/select'
 import { useCreateIncomeCategory, useUpdateIncomeCategory } from '@/modules/financeiro/hooks/useCategories'
+import { useCategorias } from '@/modules/financeiro/hooks/useCategorias'
 import { getErrorMessage } from '@/shared/lib/errors'
 import { FormField } from '@/shared/components/common/FormField'
 import { SubmitButton } from '@/shared/components/common/SubmitButton'
@@ -28,6 +29,7 @@ const schema = z.object({
   nome: z.string().min(1, 'Informe um nome'),
   valor_mensal: z.coerce.number().min(0, 'Não pode ser negativo'),
   recorrencia: z.enum(['mensal', 'anual', 'semestral', 'eventual']),
+  categoria_id: z.string().optional(),
   observacao: z.string().optional(),
 })
 
@@ -50,6 +52,7 @@ interface IncomeCategoryDialogProps {
 export function IncomeCategoryDialog({ open, onOpenChange, category }: IncomeCategoryDialogProps) {
   const createCategory = useCreateIncomeCategory()
   const updateCategory = useUpdateIncomeCategory()
+  const { data: categorias = [] } = useCategorias('receita')
   const isEditing = !!category
 
   const { register, handleSubmit, control, reset, formState: { errors } } = useForm<
@@ -58,7 +61,7 @@ export function IncomeCategoryDialog({ open, onOpenChange, category }: IncomeCat
     FormOutput
   >({
     resolver: zodResolver(schema),
-    defaultValues: { nome: '', valor_mensal: 0, recorrencia: 'mensal', observacao: '' },
+    defaultValues: { nome: '', valor_mensal: 0, recorrencia: 'mensal', categoria_id: undefined, observacao: '' },
   })
 
   useEffect(() => {
@@ -69,9 +72,10 @@ export function IncomeCategoryDialog({ open, onOpenChange, category }: IncomeCat
               nome: category.nome,
               valor_mensal: category.valor_mensal,
               recorrencia: category.recorrencia,
+              categoria_id: category.categoria_id ?? undefined,
               observacao: category.observacao ?? '',
             }
-          : { nome: '', valor_mensal: 0, recorrencia: 'mensal', observacao: '' },
+          : { nome: '', valor_mensal: 0, recorrencia: 'mensal', categoria_id: undefined, observacao: '' },
       )
     }
   }, [open, category, reset])
@@ -82,6 +86,7 @@ export function IncomeCategoryDialog({ open, onOpenChange, category }: IncomeCat
         nome: values.nome,
         valor_mensal: values.valor_mensal,
         recorrencia: values.recorrencia,
+        categoria_id: values.categoria_id || null,
         observacao: values.observacao || null,
       }
       if (isEditing) {
@@ -133,6 +138,34 @@ export function IncomeCategoryDialog({ open, onOpenChange, category }: IncomeCat
                 </Select>
               )}
             />
+          </FormField>
+
+          <FormField label="Categoria (opcional)" htmlFor="categoria_id">
+            <Controller
+              control={control}
+              name="categoria_id"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="categoria_id" className="w-full">
+                    <SelectValue placeholder="Nenhuma" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categorias.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        <span
+                          className="mr-1 inline-block size-2.5 rounded-full"
+                          style={{ backgroundColor: c.cor }}
+                        />
+                        {c.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            <p className="text-xs text-muted-foreground">
+              Usada como sugestão automática ao confirmar o recebimento ou lançar avulso.
+            </p>
           </FormField>
 
           <FormField label="Observação" htmlFor="observacao">

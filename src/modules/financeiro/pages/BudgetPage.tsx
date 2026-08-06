@@ -58,6 +58,7 @@ export default function BudgetPage() {
   async function confirmarLancamento(opts: {
     tipo: 'saida' | 'entrada'
     categoryId: string
+    categoriaId: string | null
     nome: string
     valor: number
   }) {
@@ -69,6 +70,7 @@ export default function BudgetPage() {
         valor_entrada: opts.tipo === 'entrada' ? opts.valor : 0,
         expense_category_id: opts.tipo === 'saida' ? opts.categoryId : null,
         income_category_id: opts.tipo === 'entrada' ? opts.categoryId : null,
+        categoria_id: opts.categoriaId,
       })
       if (opts.tipo === 'saida') {
         setPago.mutate(
@@ -129,6 +131,7 @@ export default function BudgetPage() {
                           confirmarLancamento({
                             tipo: 'entrada',
                             categoryId: c.categoryId,
+                            categoriaId: c.categoriaId,
                             nome: c.nome,
                             valor: c.previsto,
                           })
@@ -229,6 +232,7 @@ export default function BudgetPage() {
                             confirmarLancamento({
                               tipo: 'saida',
                               categoryId: c.categoryId,
+                              categoriaId: c.categoriaId,
                               nome: c.nome,
                               valor: c.previsto,
                             })
