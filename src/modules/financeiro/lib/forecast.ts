@@ -53,6 +53,10 @@ function isChargedInMonth(category: ExpenseCategory, monthDate: Date): boolean {
  * categories + starting balance. Only mensal income is projected forward — anual/
  * semestral/eventual income is too irregular to forecast reliably and is left out here
  * (it's still counted in the Dashboard's current-month renda total).
+ *
+ * `avulsoAtual` folds in this month's already-logged transactions that aren't tied to
+ * any Gasto Fixo/Receita Fixa (one-off entries like a random beer or a freelance gig) —
+ * the only month we can know those for, since future ones haven't happened yet.
  */
 export function computeForecast(
   expenseCategories: ExpenseCategory[],
@@ -60,6 +64,7 @@ export function computeForecast(
   saldoInicial: number,
   monthsAhead = 12,
   startDate = new Date(),
+  avulsoAtual: { entradas: number; saidas: number } = { entradas: 0, saidas: 0 },
 ): ForecastMonth[] {
   const mensalIncome = incomeCategories
     .filter((c) => c.recorrencia === 'mensal')
@@ -70,10 +75,15 @@ export function computeForecast(
 
   for (let i = 0; i < monthsAhead; i++) {
     const monthDate = startOfMonth(addMonths(startDate, i))
-    const totalSaidas = expenseCategories
+    let totalSaidas = expenseCategories
       .filter((c) => isChargedInMonth(c, monthDate))
       .reduce((sum, c) => sum + c.valor_mensal, 0)
-    const totalEntradas = mensalIncome
+    let totalEntradas = mensalIncome
+
+    if (i === 0) {
+      totalSaidas += avulsoAtual.saidas
+      totalEntradas += avulsoAtual.entradas
+    }
 
     saldoAcumulado = saldoAcumulado + totalEntradas - totalSaidas
 

@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/components/ui/table'
 import { useExpenseCategories, useIncomeCategories } from '@/modules/financeiro/hooks/useCategories'
 import { useAppSettings } from '@/modules/financeiro/hooks/useAppSettings'
+import { useMonthTransactions, useTransactionsSince } from '@/modules/financeiro/hooks/useTransactions'
 import { computeForecast } from '@/modules/financeiro/lib/forecast'
 import { formatCurrency, formatMonthLabel } from '@/shared/lib/formatters'
 import { LoadingState } from '@/shared/components/common/LoadingState'
@@ -12,25 +13,42 @@ export default function ForecastPage() {
   const { data: expenseCategories = [], isLoading: loadingExpense } = useExpenseCategories()
   const { data: incomeCategories = [], isLoading: loadingIncome } = useIncomeCategories()
   const { data: settings, isLoading: loadingSettings } = useAppSettings()
+  const { data: currentMonthTransactions = [], isLoading: loadingCurrentMonth } = useMonthTransactions(new Date())
+  const { data: txSinceReconciliation = [], isLoading: loadingSince } = useTransactionsSince(settings?.saldo_atual_em)
+
+  const saldoAtual = useMemo(() => {
+    const base = settings?.saldo_atual_conta ?? 0
+    const delta = txSinceReconciliation.reduce((sum, t) => sum + t.valor_entrada - t.valor_saida, 0)
+    return base + delta
+  }, [settings?.saldo_atual_conta, txSinceReconciliation])
+
+  const avulsoAtual = useMemo(() => {
+    const avulso = currentMonthTransactions.filter((t) => !t.expense_category_id && !t.income_category_id)
+    return {
+      saidas: avulso.reduce((sum, t) => sum + t.valor_saida, 0),
+      entradas: avulso.reduce((sum, t) => sum + t.valor_entrada, 0),
+    }
+  }, [currentMonthTransactions])
 
   const forecast = useMemo(() => {
     if (!settings) return []
-    return computeForecast(expenseCategories, incomeCategories, settings.saldo_atual_conta, 12)
-  }, [expenseCategories, incomeCategories, settings])
+    return computeForecast(expenseCategories, incomeCategories, saldoAtual, 12, new Date(), avulsoAtual)
+  }, [expenseCategories, incomeCategories, saldoAtual, avulsoAtual, settings])
 
   const chartData = forecast.map((m) => ({
     mes: formatMonthLabel(m.monthDate),
     Saldo: m.saldoAcumulado,
   }))
 
-  const isLoading = loadingExpense || loadingIncome || loadingSettings
+  const isLoading = loadingExpense || loadingIncome || loadingSettings || loadingCurrentMonth || loadingSince
 
   return (
     <div className="flex flex-col gap-4">
       <div>
         <h1 className="font-display text-2xl font-semibold">Projeção Futura</h1>
         <p className="text-sm text-muted-foreground">
-          Próximos 12 meses, calculado a partir das categorias cadastradas e do saldo atual.
+          Próximos 12 meses, a partir do saldo atual (já contando o que você lançou) e das
+          categorias fixas cadastradas — este mês também soma os lançamentos avulsos.
         </p>
       </div>
 
