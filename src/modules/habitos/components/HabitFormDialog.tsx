@@ -21,7 +21,7 @@ import {
 import { FormField } from '@/shared/components/common/FormField'
 import { SubmitButton } from '@/shared/components/common/SubmitButton'
 import { WeekdayToggleGroup } from '@/modules/habitos/components/WeekdayToggleGroup'
-import { HABIT_ICON_NAMES, getHabitIcon } from '@/modules/habitos/lib/habitIcons'
+import { HABIT_ICON_NAMES, getHabitIcon, getHabitIconLabel } from '@/modules/habitos/lib/habitIcons'
 import { useCreateHabit, useUpdateHabit } from '@/modules/habitos/hooks/useHabits'
 import { getErrorMessage } from '@/shared/lib/errors'
 import type { Tables } from '@/shared/types/database.types'
@@ -122,7 +122,7 @@ export function HabitFormDialog({ open, onOpenChange, habit }: HabitFormDialogPr
                       return (
                         <SelectItem key={name} value={name}>
                           <Icon className="size-4" />
-                          {name}
+                          {getHabitIconLabel(name)}
                         </SelectItem>
                       )
                     })}
