@@ -1,7 +1,10 @@
-import { useMemo } from 'react'
-import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts'
+import { useMemo, useState } from 'react'
+import { LineChart, Line, Legend, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/components/ui/table'
+import { Input } from '@/shared/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select'
+import { FormField } from '@/shared/components/common/FormField'
 import { useExpenseCategories, useIncomeCategories } from '@/modules/financeiro/hooks/useCategories'
 import { useAppSettings } from '@/modules/financeiro/hooks/useAppSettings'
 import { useMonthTransactions, useTransactionsSince } from '@/modules/financeiro/hooks/useTransactions'
@@ -42,9 +45,54 @@ export default function ForecastPage() {
     return computeForecast(expenseCategories, incomeCategories, saldoInicioMes, 12, new Date(), currentMonthActual)
   }, [expenseCategories, incomeCategories, saldoInicioMes, currentMonthActual, settings])
 
-  const chartData = forecast.map((m) => ({
+  const [compraValor, setCompraValor] = useState('')
+  const [compraParcelas, setCompraParcelas] = useState('1')
+  const [compraMesIndex, setCompraMesIndex] = useState(0)
+
+  const compraValorNum = Number(compraValor) || 0
+  const parcelasNum = Math.max(1, Number(compraParcelas) || 1)
+  const parcela = compraValorNum / parcelasNum
+  const simulationActive = compraValorNum > 0
+
+  const extraSaidas = useMemo(() => {
+    if (!simulationActive) return undefined
+    const arr = new Array(12).fill(0)
+    for (let i = compraMesIndex; i < Math.min(12, compraMesIndex + parcelasNum); i++) {
+      arr[i] = parcela
+    }
+    return arr
+  }, [simulationActive, compraMesIndex, parcelasNum, parcela])
+
+  const forecastComCompra = useMemo(() => {
+    if (!settings || !extraSaidas) return forecast
+    return computeForecast(
+      expenseCategories,
+      incomeCategories,
+      saldoInicioMes,
+      12,
+      new Date(),
+      currentMonthActual,
+      extraSaidas,
+    )
+  }, [expenseCategories, incomeCategories, saldoInicioMes, currentMonthActual, settings, extraSaidas, forecast])
+
+  const simulationSummary = useMemo(() => {
+    if (!simulationActive || forecastComCompra.length === 0) return null
+    let min = forecastComCompra[0].saldoAcumulado
+    let minMonth = formatMonthLabel(forecastComCompra[0].monthDate)
+    for (const m of forecastComCompra) {
+      if (m.saldoAcumulado < min) {
+        min = m.saldoAcumulado
+        minMonth = formatMonthLabel(m.monthDate)
+      }
+    }
+    return { min, minMonth }
+  }, [simulationActive, forecastComCompra])
+
+  const chartData = forecast.map((m, i) => ({
     mes: formatMonthLabel(m.monthDate),
     Saldo: m.saldoAcumulado,
+    'Com a compra': forecastComCompra[i]?.saldoAcumulado ?? m.saldoAcumulado,
   }))
 
   const isLoading = loadingExpense || loadingIncome || loadingSettings || loadingCurrentMonth || loadingSince
@@ -81,9 +129,84 @@ export default function ForecastPage() {
                       width={80}
                     />
                     <Tooltip formatter={(v) => formatCurrency(Number(v))} />
+                    {simulationActive && <Legend />}
                     <Line type="monotone" dataKey="Saldo" stroke="var(--primary)" strokeWidth={2} dot={false} />
+                    {simulationActive && (
+                      <Line
+                        type="monotone"
+                        dataKey="Com a compra"
+                        stroke="var(--destructive)"
+                        strokeWidth={2}
+                        strokeDasharray="4 4"
+                        dot={false}
+                      />
+                    )}
                   </LineChart>
                 </ResponsiveContainer>
+              </div>
+
+              <div className="mt-6 flex flex-col gap-3 border-t pt-4">
+                <div>
+                  <h3 className="font-display text-sm font-semibold">Simular uma compra</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Veja como fica a saúde financeira dos próximos 12 meses se você comprar algo agora.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  <FormField label="Valor (R$)" htmlFor="compra-valor">
+                    <Input
+                      id="compra-valor"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={compraValor}
+                      onChange={(e) => setCompraValor(e.target.value)}
+                      placeholder="0,00"
+                    />
+                  </FormField>
+                  <FormField label="Parcelas" htmlFor="compra-parcelas">
+                    <Input
+                      id="compra-parcelas"
+                      type="number"
+                      step="1"
+                      min="1"
+                      value={compraParcelas}
+                      onChange={(e) => setCompraParcelas(e.target.value)}
+                    />
+                  </FormField>
+                  <div className="col-span-2 sm:col-span-1">
+                    <FormField label="A partir de" htmlFor="compra-mes">
+                      <Select value={String(compraMesIndex)} onValueChange={(v) => setCompraMesIndex(Number(v))}>
+                        <SelectTrigger id="compra-mes" className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {forecast.map((m, i) => (
+                            <SelectItem key={m.monthKey} value={String(i)}>
+                              {formatMonthLabel(m.monthDate)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormField>
+                  </div>
+                </div>
+
+                {simulationSummary && (
+                  <div
+                    className={`rounded-md border p-3 text-sm ${
+                      simulationSummary.min < 0
+                        ? 'border-destructive/50 bg-destructive/10 text-destructive'
+                        : 'border-primary/50 bg-primary/10 text-primary'
+                    }`}
+                  >
+                    {simulationSummary.min < 0
+                      ? `Essa compra deixaria seu saldo negativo: mínimo projetado de ${formatCurrency(simulationSummary.min)} em ${simulationSummary.minMonth}.`
+                      : `Seu saldo continua positivo com essa compra — mínimo projetado de ${formatCurrency(simulationSummary.min)} em ${simulationSummary.minMonth}.`}
+                    {parcelasNum > 1 && ` Parcela de ${formatCurrency(parcela)}/mês.`}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

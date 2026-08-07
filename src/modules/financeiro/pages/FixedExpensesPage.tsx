@@ -15,7 +15,7 @@ import { ExpenseCategoryDialog } from '@/modules/financeiro/components/categorie
 import { IncomeCategoryDialog } from '@/modules/financeiro/components/categories/IncomeCategoryDialog'
 import { LoadingState } from '@/shared/components/common/LoadingState'
 import { EmptyState } from '@/shared/components/common/EmptyState'
-import { formatCurrency, formatPercent } from '@/shared/lib/formatters'
+import { formatCurrency, formatPercent, formatDate } from '@/shared/lib/formatters'
 import { CATEGORY_GROUP_LABELS, CATEGORY_GROUP_ORDER, CATEGORY_GROUP_ACCENT } from '@/modules/financeiro/lib/categoryGroups'
 import type { Tables } from '@/shared/types/database.types'
 
@@ -104,7 +104,7 @@ function ExpensesTab() {
                     <p className="font-medium">{c.nome}</p>
                     <p className="text-xs text-muted-foreground">
                       {formatCurrency(c.valor_mensal)} · {c.frequencia}
-                      {c.end_date ? ` · termina ${c.end_date}` : ''}
+                      {c.end_date ? ` · termina ${formatDate(c.end_date)}` : ''}
                     </p>
                   </div>
                   <div className="flex gap-1">

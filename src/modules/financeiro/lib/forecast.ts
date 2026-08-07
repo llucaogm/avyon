@@ -60,6 +60,10 @@ function isChargedInMonth(category: ExpenseCategory, monthDate: Date): boolean {
  * haven't happened yet. `saldoInicial` must then already exclude this month's
  * transactions (i.e. be the balance as of the start of the month), or they'd be
  * double-counted.
+ *
+ * `extraSaidas[i]`, when given, adds a one-off amount to month i's saídas — used by
+ * the purchase simulator to see how a lump-sum or installment purchase ripples
+ * through the projection without touching the underlying categories.
  */
 export function computeForecast(
   expenseCategories: ExpenseCategory[],
@@ -68,6 +72,7 @@ export function computeForecast(
   monthsAhead = 12,
   startDate = new Date(),
   currentMonthActual?: { entradas: number; saidas: number },
+  extraSaidas?: number[],
 ): ForecastMonth[] {
   const mensalIncome = incomeCategories
     .filter((c) => c.recorrencia === 'mensal')
@@ -91,6 +96,8 @@ export function computeForecast(
         .reduce((sum, c) => sum + c.valor_mensal, 0)
       totalEntradas = mensalIncome
     }
+
+    totalSaidas += extraSaidas?.[i] ?? 0
 
     saldoAcumulado = saldoAcumulado + totalEntradas - totalSaidas
 
