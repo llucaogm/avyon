@@ -34,6 +34,7 @@ const schema = z.object({
   categoria_id: z.string().optional(),
   due_month: z.string().optional(),
   charge_date: z.string().optional(),
+  dia_vencimento: z.string().optional(),
   end_date: z.string().optional(),
   observacao: z.string().optional(),
 })
@@ -90,6 +91,7 @@ export function ExpenseCategoryDialog({
       categoria_id: undefined,
       due_month: undefined,
       charge_date: undefined,
+      dia_vencimento: undefined,
       end_date: undefined,
       observacao: '',
     },
@@ -109,6 +111,7 @@ export function ExpenseCategoryDialog({
               categoria_id: category.categoria_id ?? undefined,
               due_month: category.due_month ? String(category.due_month) : undefined,
               charge_date: category.charge_date ?? undefined,
+              dia_vencimento: category.dia_vencimento ? String(category.dia_vencimento) : undefined,
               end_date: category.end_date ?? undefined,
               observacao: category.observacao ?? '',
             }
@@ -120,6 +123,7 @@ export function ExpenseCategoryDialog({
               categoria_id: undefined,
               due_month: undefined,
               charge_date: undefined,
+              dia_vencimento: undefined,
               end_date: undefined,
               observacao: '',
             },
@@ -137,6 +141,7 @@ export function ExpenseCategoryDialog({
         categoria_id: values.categoria_id || null,
         due_month: values.due_month ? Number(values.due_month) : null,
         charge_date: values.charge_date || null,
+        dia_vencimento: values.dia_vencimento ? Number(values.dia_vencimento) : null,
         end_date: values.end_date || null,
         observacao: values.observacao || null,
       }
@@ -268,6 +273,12 @@ export function ExpenseCategoryDialog({
           {frequencia === 'unico' && (
             <FormField label="Data da cobrança" htmlFor="charge_date">
               <Input id="charge_date" type="date" {...register('charge_date')} />
+            </FormField>
+          )}
+
+          {frequencia === 'mensal' && (
+            <FormField label="Dia de vencimento (opcional)" htmlFor="dia_vencimento">
+              <Input id="dia_vencimento" type="number" min="1" max="31" {...register('dia_vencimento')} />
             </FormField>
           )}
 

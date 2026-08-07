@@ -15,24 +15,30 @@ import { FormField } from '@/shared/components/common/FormField'
 import { SubmitButton } from '@/shared/components/common/SubmitButton'
 import { MonthSwitcher } from '@/modules/financeiro/components/layout/MonthSwitcher'
 import { SummaryCard } from '@/modules/financeiro/components/dashboard/SummaryCard'
-import { GroupBreakdownChart } from '@/modules/financeiro/components/dashboard/GroupBreakdownChart'
 import { AlertBanner } from '@/modules/financeiro/components/dashboard/AlertBanner'
+import { SpendingPaceThermometer } from '@/modules/financeiro/components/dashboard/SpendingPaceThermometer'
+import { RunwayCard } from '@/modules/financeiro/components/dashboard/RunwayCard'
+import { CashFlowCard } from '@/modules/financeiro/components/dashboard/CashFlowCard'
+import { FixedVsFlexibleMatrix } from '@/modules/financeiro/components/dashboard/FixedVsFlexibleMatrix'
+import { UpcomingDueList } from '@/modules/financeiro/components/dashboard/UpcomingDueList'
+import { RecentTransactionsList } from '@/modules/financeiro/components/dashboard/RecentTransactionsList'
 import { useMonth } from '@/modules/financeiro/context/MonthProvider'
 import { useMonthlyBudget } from '@/modules/financeiro/hooks/useMonthlyBudget'
+import { useFinancialHealth } from '@/modules/financeiro/hooks/useFinancialHealth'
 import { useIncomeCategories } from '@/modules/financeiro/hooks/useCategories'
 import { useMonthTransactions, useTransactionsSince } from '@/modules/financeiro/hooks/useTransactions'
 import { useAppSettings, useUpdateAppSettings } from '@/modules/financeiro/hooks/useAppSettings'
-import { formatCurrency, formatDateTime } from '@/shared/lib/formatters'
+import { formatCurrency } from '@/shared/lib/formatters'
 import { todayIso } from '@/modules/financeiro/lib/monthUtils'
-import { CATEGORY_GROUP_LABELS } from '@/modules/financeiro/lib/categoryGroups'
 import { getErrorMessage } from '@/shared/lib/errors'
 
 export default function DashboardPage() {
   const { selectedMonth } = useMonth()
-  const { perGroup, totals } = useMonthlyBudget(selectedMonth)
+  const { totals } = useMonthlyBudget(selectedMonth)
   const { data: incomeCategories = [] } = useIncomeCategories()
   const { data: settings } = useAppSettings()
   const { data: currentMonthTransactions = [] } = useMonthTransactions(new Date())
+  const { data: selectedMonthTransactions = [] } = useMonthTransactions(selectedMonth)
   const { data: txSinceReconciliation = [] } = useTransactionsSince(settings?.saldo_atual_em)
   const [settingsOpen, setSettingsOpen] = useState(false)
 
@@ -49,6 +55,11 @@ export default function DashboardPage() {
     return base + delta
   }, [settings?.saldo_atual_conta, txSinceReconciliation])
 
+  const health = useFinancialHealth(selectedMonth, rendaLiquida)
+
+  const entradasMes = selectedMonthTransactions.reduce((sum, t) => sum + t.valor_entrada, 0)
+  const saidasMes = selectedMonthTransactions.reduce((sum, t) => sum + t.valor_saida, 0)
+
   const limitePercentual = settings?.limite_alerta_percentual ?? 20
   const limiteValor = (rendaLiquida * limitePercentual) / 100
 
@@ -56,8 +67,6 @@ export default function DashboardPage() {
   const todayTx = currentMonthTransactions.filter((t) => t.data === today)
   const saidasHoje = todayTx.reduce((sum, t) => sum + t.valor_saida, 0)
   const entradasHoje = todayTx.reduce((sum, t) => sum + t.valor_entrada, 0)
-
-  const saldoDoMes = rendaLiquida - totals.realizado
 
   const showAlert = useMemo(() => {
     if (rendaLiquida <= 0) return false
@@ -83,20 +92,15 @@ export default function DashboardPage() {
       )}
 
       <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-        <SummaryCard label="Renda líquida" value={rendaLiquida} index={0} />
+        <SummaryCard label="Saldo geral" value={saldoAtual} index={0} />
+        <SummaryCard label="Entradas do mês" value={entradasMes} tone="positive" index={1} />
+        <SummaryCard label="Saídas do mês" value={saidasMes} tone="negative" index={2} />
         <SummaryCard
-          label="Saldo atual"
-          value={saldoAtual}
-          caption={settings ? `conferido em ${formatDateTime(settings.saldo_atual_em)}` : undefined}
-          index={1}
+          label="Saldo livre"
+          value={health.restanteFlexivel}
+          tone={health.restanteFlexivel >= 0 ? 'positive' : 'negative'}
+          index={3}
         />
-        <SummaryCard
-          label="Saldo do mês"
-          value={saldoDoMes}
-          tone={saldoDoMes >= 0 ? 'positive' : 'negative'}
-          index={2}
-        />
-        <SummaryCard label="Gasto total no mês" value={totals.realizado} index={3} />
       </div>
 
       <Card>
@@ -115,41 +119,20 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Previsto x Realizado por grupo</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <GroupBreakdownChart data={perGroup} />
-        </CardContent>
-      </Card>
+      <SpendingPaceThermometer rendaLiquida={rendaLiquida} />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Resumo do mês</CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-col divide-y p-0">
-          {perGroup
-            .filter((g) => g.previsto > 0 || g.realizado > 0)
-            .map((g) => {
-              const diferenca = g.realizado - g.previsto
-              const ok = g.previsto === 0 || g.realizado <= g.previsto
-              return (
-                <div key={g.grupo} className="flex items-center justify-between p-3 text-sm">
-                  <span className="font-medium">{CATEGORY_GROUP_LABELS[g.grupo]}</span>
-                  <div className="flex items-center gap-3 text-right">
-                    <span className="text-muted-foreground">
-                      {formatCurrency(g.realizado)} / {formatCurrency(g.previsto)}
-                    </span>
-                    <span className={ok ? 'text-primary' : 'text-destructive'}>
-                      {ok ? 'OK' : `+${formatCurrency(diferenca)}`}
-                    </span>
-                  </div>
-                </div>
-              )
-            })}
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <RunwayCard saldoAtual={saldoAtual} />
+        <CashFlowCard
+          comprometido={health.custosFixos}
+          investido={health.investido}
+          livre={health.restanteFlexivel}
+        />
+        <FixedVsFlexibleMatrix percentualComprometido={health.percentualComprometido} />
+      </div>
+
+      <UpcomingDueList />
+      <RecentTransactionsList />
 
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </div>

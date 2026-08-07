@@ -198,6 +198,7 @@ export type Database = {
           categoria_id: string | null
           charge_date: string | null
           created_at: string
+          dia_vencimento: number | null
           due_month: number | null
           end_date: string | null
           frequencia: Database["public"]["Enums"]["expense_frequency"]
@@ -214,6 +215,7 @@ export type Database = {
           categoria_id?: string | null
           charge_date?: string | null
           created_at?: string
+          dia_vencimento?: number | null
           due_month?: number | null
           end_date?: string | null
           frequencia?: Database["public"]["Enums"]["expense_frequency"]
@@ -230,6 +232,7 @@ export type Database = {
           categoria_id?: string | null
           charge_date?: string | null
           created_at?: string
+          dia_vencimento?: number | null
           due_month?: number | null
           end_date?: string | null
           frequencia?: Database["public"]["Enums"]["expense_frequency"]
