@@ -6,12 +6,13 @@ import type { Tables } from '@/shared/types/database.types'
 
 export interface SpendingPacePoint {
   dia: number
-  real: number
+  real: number | null
   guia: number
 }
 
 export interface SpendingPace {
   series: SpendingPacePoint[]
+  diaAtual: number
   diasRestantes: number
   tetoDiarioRecomendado: number
 }
@@ -44,15 +45,22 @@ export function useSpendingPace(disponivelFlexivel: number, restanteFlexivel: nu
       gastoPorDia.set(dia, (gastoPorDia.get(dia) ?? 0) + t.valor_saida)
     }
 
+    // Full month on the x-axis (not just days elapsed) so "hoje" reads as a point
+    // partway through, not the end of the chart — the guide line needs the whole
+    // month to show where you're supposed to land, and the real line stops at today.
     const series: SpendingPacePoint[] = []
     let acumulado = 0
-    for (let dia = 1; dia <= diaAtual; dia++) {
-      acumulado += gastoPorDia.get(dia) ?? 0
+    for (let dia = 1; dia <= diasNoMes; dia++) {
       const guia = diasNoMes > 1 ? disponivelFlexivel * (1 - (dia - 1) / (diasNoMes - 1)) : 0
-      series.push({ dia, real: disponivelFlexivel - acumulado, guia })
+      if (dia <= diaAtual) {
+        acumulado += gastoPorDia.get(dia) ?? 0
+        series.push({ dia, real: disponivelFlexivel - acumulado, guia })
+      } else {
+        series.push({ dia, real: null, guia })
+      }
     }
 
-    return { series, diasRestantes, tetoDiarioRecomendado }
+    return { series, diaAtual, diasRestantes, tetoDiarioRecomendado }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expenseCategories, transactions, disponivelFlexivel, restanteFlexivel])
 }

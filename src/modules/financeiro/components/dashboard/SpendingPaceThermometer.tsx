@@ -1,4 +1,4 @@
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { useFinancialHealth } from '@/modules/financeiro/hooks/useFinancialHealth'
 import { useSpendingPace } from '@/modules/financeiro/hooks/useSpendingPace'
@@ -6,7 +6,10 @@ import { formatCurrency } from '@/shared/lib/formatters'
 
 export function SpendingPaceThermometer() {
   const { disponivelFlexivel, restanteFlexivel, isLoading } = useFinancialHealth(new Date())
-  const { series, diasRestantes, tetoDiarioRecomendado } = useSpendingPace(disponivelFlexivel, restanteFlexivel)
+  const { series, diaAtual, diasRestantes, tetoDiarioRecomendado } = useSpendingPace(
+    disponivelFlexivel,
+    restanteFlexivel,
+  )
 
   return (
     <Card className="animate-fade-in-up">
@@ -34,12 +37,18 @@ export function SpendingPaceThermometer() {
           </div>
         </div>
 
-        {!isLoading && series.length > 1 && (
+        {!isLoading && diaAtual > 1 && (
           <div className="h-56 w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={series} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-border" />
-                <XAxis dataKey="dia" fontSize={11} tickLine={false} axisLine={false} />
+                <XAxis
+                  dataKey="dia"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  label={{ value: 'Dia do mês', position: 'insideBottom', offset: -4, fontSize: 11, fill: 'var(--muted-foreground)' }}
+                />
                 <YAxis
                   tickFormatter={(v) => formatCurrency(v)}
                   fontSize={11}
@@ -48,7 +57,16 @@ export function SpendingPaceThermometer() {
                   width={80}
                 />
                 <Tooltip formatter={(v) => formatCurrency(Number(v))} labelFormatter={(d) => `Dia ${d}`} />
-                <Line type="monotone" dataKey="real" name="Saldo flexível" stroke="var(--primary)" strokeWidth={2} dot={false} />
+                <ReferenceLine x={diaAtual} stroke="var(--border)" label={{ value: 'Hoje', fontSize: 11, fill: 'var(--muted-foreground)', position: 'top' }} />
+                <Line
+                  type="monotone"
+                  dataKey="real"
+                  name="Saldo flexível"
+                  stroke="var(--primary)"
+                  strokeWidth={2}
+                  dot={false}
+                  connectNulls={false}
+                />
                 <Line
                   type="monotone"
                   dataKey="guia"
@@ -63,7 +81,7 @@ export function SpendingPaceThermometer() {
           </div>
         )}
 
-        {!isLoading && series.length <= 1 && (
+        {!isLoading && diaAtual <= 1 && (
           <p className="py-6 text-center text-sm text-muted-foreground">
             Ainda sem dados suficientes este mês para o gráfico.
           </p>
