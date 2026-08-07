@@ -214,6 +214,11 @@ export default function ForecastPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Detalhe mensal</CardTitle>
+              {simulationActive && (
+                <p className="text-xs text-muted-foreground">
+                  As colunas em itálico mostram como ficaria com a compra simulada.
+                </p>
+              )}
             </CardHeader>
             <CardContent className="overflow-x-auto">
               <Table>
@@ -222,26 +227,49 @@ export default function ForecastPage() {
                     <TableHead>Mês</TableHead>
                     <TableHead className="text-right">Entradas</TableHead>
                     <TableHead className="text-right">Saídas</TableHead>
+                    {simulationActive && (
+                      <TableHead className="text-right italic">Saídas c/ compra</TableHead>
+                    )}
                     <TableHead className="text-right">Saldo acumulado</TableHead>
+                    {simulationActive && (
+                      <TableHead className="text-right italic">Saldo c/ compra</TableHead>
+                    )}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {forecast.map((m) => (
-                    <TableRow key={m.monthKey}>
-                      <TableCell>{formatMonthLabel(m.monthDate)}</TableCell>
-                      <TableCell className="text-right text-primary">
-                        {formatCurrency(m.totalEntradas)}
-                      </TableCell>
-                      <TableCell className="text-right text-destructive">
-                        {formatCurrency(m.totalSaidas)}
-                      </TableCell>
-                      <TableCell
-                        className={`text-right font-medium ${m.saldoAcumulado < 0 ? 'text-destructive' : ''}`}
-                      >
-                        {formatCurrency(m.saldoAcumulado)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {forecast.map((m, i) => {
+                    const sim = forecastComCompra[i]
+                    return (
+                      <TableRow key={m.monthKey}>
+                        <TableCell>{formatMonthLabel(m.monthDate)}</TableCell>
+                        <TableCell className="text-right text-primary">
+                          {formatCurrency(m.totalEntradas)}
+                        </TableCell>
+                        <TableCell className="text-right text-destructive">
+                          {formatCurrency(m.totalSaidas)}
+                        </TableCell>
+                        {simulationActive && (
+                          <TableCell className="text-right italic text-destructive">
+                            {formatCurrency(sim?.totalSaidas ?? m.totalSaidas)}
+                          </TableCell>
+                        )}
+                        <TableCell
+                          className={`text-right font-medium ${m.saldoAcumulado < 0 ? 'text-destructive' : ''}`}
+                        >
+                          {formatCurrency(m.saldoAcumulado)}
+                        </TableCell>
+                        {simulationActive && (
+                          <TableCell
+                            className={`text-right italic font-medium ${
+                              (sim?.saldoAcumulado ?? m.saldoAcumulado) < 0 ? 'text-destructive' : ''
+                            }`}
+                          >
+                            {formatCurrency(sim?.saldoAcumulado ?? m.saldoAcumulado)}
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    )
+                  })}
                 </TableBody>
               </Table>
             </CardContent>
