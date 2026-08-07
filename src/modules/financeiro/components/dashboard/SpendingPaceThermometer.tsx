@@ -4,8 +4,8 @@ import { useFinancialHealth } from '@/modules/financeiro/hooks/useFinancialHealt
 import { useSpendingPace } from '@/modules/financeiro/hooks/useSpendingPace'
 import { formatCurrency } from '@/shared/lib/formatters'
 
-export function SpendingPaceThermometer({ rendaLiquida }: { rendaLiquida: number }) {
-  const { disponivelFlexivel, restanteFlexivel, isLoading } = useFinancialHealth(new Date(), rendaLiquida)
+export function SpendingPaceThermometer() {
+  const { disponivelFlexivel, restanteFlexivel, isLoading } = useFinancialHealth(new Date())
   const { series, diasRestantes, tetoDiarioRecomendado } = useSpendingPace(disponivelFlexivel, restanteFlexivel)
 
   return (

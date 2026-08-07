@@ -38,7 +38,6 @@ export default function DashboardPage() {
   const { data: incomeCategories = [] } = useIncomeCategories()
   const { data: settings } = useAppSettings()
   const { data: currentMonthTransactions = [] } = useMonthTransactions(new Date())
-  const { data: selectedMonthTransactions = [] } = useMonthTransactions(selectedMonth)
   const { data: txSinceReconciliation = [] } = useTransactionsSince(settings?.saldo_atual_em)
   const [settingsOpen, setSettingsOpen] = useState(false)
 
@@ -55,10 +54,13 @@ export default function DashboardPage() {
     return base + delta
   }, [settings?.saldo_atual_conta, txSinceReconciliation])
 
-  const health = useFinancialHealth(selectedMonth, rendaLiquida)
+  const health = useFinancialHealth(selectedMonth)
 
-  const entradasMes = selectedMonthTransactions.reduce((sum, t) => sum + t.valor_entrada, 0)
-  const saidasMes = selectedMonthTransactions.reduce((sum, t) => sum + t.valor_saida, 0)
+  // Sums to exactly this month's total saídas — custosFixos + investido +
+  // gastoFlexivelRealizado always covers every transaction (each belongs to exactly
+  // one grupo, or none = avulso, which gastoFlexivelRealizado already includes).
+  const entradasMes = health.entradasRealizadas
+  const saidasMes = health.custosFixos + health.investido + health.gastoFlexivelRealizado
 
   const limitePercentual = settings?.limite_alerta_percentual ?? 20
   const limiteValor = (rendaLiquida * limitePercentual) / 100
@@ -119,7 +121,7 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      <SpendingPaceThermometer rendaLiquida={rendaLiquida} />
+      <SpendingPaceThermometer />
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <RunwayCard saldoAtual={saldoAtual} />
