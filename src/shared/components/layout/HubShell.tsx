@@ -20,7 +20,10 @@ export function HubShell() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="flex items-center justify-between border-b px-4 py-2.5">
+      <header
+        className="flex items-center justify-between border-b px-4 py-2.5"
+        style={{ paddingTop: 'max(0.625rem, env(safe-area-inset-top))' }}
+      >
         <Link to="/" className="press-feedback flex items-center gap-2">
           <img src={avyonLogo} alt="Avyon" className="h-7 w-auto" />
         </Link>
