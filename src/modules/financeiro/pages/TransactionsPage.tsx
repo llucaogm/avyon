@@ -1,11 +1,12 @@
 import { useMemo, useState, type CSSProperties } from 'react'
-import { Trash2, Pencil, ArrowDownCircle, ArrowUpCircle } from 'lucide-react'
+import { Trash2, Pencil, ArrowDownCircle, ArrowUpCircle, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import { Button } from '@/shared/components/ui/button'
 import { MonthSwitcher } from '@/modules/financeiro/components/layout/MonthSwitcher'
 import { AnimatedCurrency } from '@/modules/financeiro/components/common/AnimatedCurrency'
 import { QuickAddSheet } from '@/modules/financeiro/components/transactions/QuickAddSheet'
+import { ImportStatementSheet } from '@/modules/financeiro/components/transactions/ImportStatementSheet'
 import { useMonth } from '@/modules/financeiro/context/MonthProvider'
 import { useMonthTransactions, useDeleteTransaction } from '@/modules/financeiro/hooks/useTransactions'
 import { useExpenseCategories, useIncomeCategories } from '@/modules/financeiro/hooks/useCategories'
@@ -24,6 +25,7 @@ export default function TransactionsPage() {
   const { data: categoriasReceita = [] } = useCategorias('receita')
   const deleteTransaction = useDeleteTransaction()
   const [editingTransaction, setEditingTransaction] = useState<Tables<'transactions'> | null>(null)
+  const [importOpen, setImportOpen] = useState(false)
 
   const categoryNameById = useMemo(() => {
     const map = new Map<string, string>()
@@ -56,9 +58,14 @@ export default function TransactionsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <h1 className="font-display text-2xl font-semibold">Lançamentos</h1>
-        <MonthSwitcher />
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="font-display text-2xl font-semibold">Lançamentos</h1>
+          <MonthSwitcher />
+        </div>
+        <Button variant="outline" size="icon" aria-label="Importar extrato" onClick={() => setImportOpen(true)}>
+          <Upload className="size-4" />
+        </Button>
       </div>
 
       <div className="grid grid-cols-3 gap-2">
@@ -163,6 +170,7 @@ export default function TransactionsPage() {
         onOpenChange={(v) => !v && setEditingTransaction(null)}
         transaction={editingTransaction ?? undefined}
       />
+      <ImportStatementSheet open={importOpen} onOpenChange={setImportOpen} />
     </div>
   )
 }

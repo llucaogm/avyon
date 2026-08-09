@@ -48,6 +48,26 @@ export function useTransactionsSince(sinceIso: string | undefined) {
   })
 }
 
+/** Transactions within an arbitrary date window — used to dedupe an imported bank
+ * statement against whatever's already logged in that same range. */
+export function useTransactionsInRange(startIso: string | undefined, endIso: string | undefined) {
+  const { user } = useAuth()
+
+  return useQuery({
+    queryKey: ['transactions', user?.id, 'range', startIso, endIso],
+    enabled: !!user && !!startIso && !!endIso,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('data,valor_entrada,valor_saida')
+        .gte('data', startIso!)
+        .lte('data', endIso!)
+      if (error) throw error
+      return data
+    },
+  })
+}
+
 /** Last N transactions, used for description autocomplete + category auto-suggest. */
 export function useRecentTransactions(limit = 100) {
   const { user } = useAuth()
@@ -78,6 +98,25 @@ export function useCreateTransaction() {
       if (error) throw error
     },
     meta: { action: 'transaction.create' },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] }),
+  })
+}
+
+/** Imports a batch of parsed statement rows in one insert instead of looping
+ * useCreateTransaction — Supabase's client accepts an array natively. */
+export function useBulkCreateTransactions() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (rows: Omit<TablesInsert<'transactions'>, 'user_id'>[]) => {
+      requireUser(user)
+      const { error } = await supabase
+        .from('transactions')
+        .insert(rows.map((row) => ({ ...row, user_id: user.id })))
+      if (error) throw error
+    },
+    meta: { action: 'transaction.bulk_create' },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] }),
   })
 }
