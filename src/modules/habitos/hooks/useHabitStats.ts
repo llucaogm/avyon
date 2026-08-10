@@ -4,9 +4,10 @@ import type { Tables } from '@/shared/types/database.types'
 import { HABIT_LOG_WINDOW_DAYS } from '@/modules/habitos/hooks/useHabitLogs'
 import { isHabitScheduledOn } from '@/modules/habitos/lib/habitSchedule'
 
-export interface HabitStreak {
+export interface HabitStat {
   current: number
   longest: number
+  percent: number
 }
 
 /** Scheduled dates for a habit, most recent first, within the log fetch window. */
@@ -22,15 +23,20 @@ function scheduledDatesDesc(habit: Tables<'habits'>): string[] {
 
 /** Current streak = consecutive scheduled days done, counting back from today —
  * stops (current freezes) at the first scheduled-but-not-done day. Longest is the
- * best run anywhere in the fetched window. Both derived client-side, never stored. */
-function computeStreak(habit: Tables<'habits'>, doneDates: Set<string>): HabitStreak {
+ * best run anywhere in the fetched window. Percent = done / scheduled across the
+ * whole window. All derived client-side, never stored. */
+function computeStats(habit: Tables<'habits'>, doneDates: Set<string>): HabitStat {
   let current = 0
   let longest = 0
   let running = 0
+  let doneCount = 0
+  let totalScheduled = 0
   let stillCounting = true
 
   for (const iso of scheduledDatesDesc(habit)) {
+    totalScheduled++
     if (doneDates.has(iso)) {
+      doneCount++
       running++
       longest = Math.max(longest, running)
       if (stillCounting) current = running
@@ -40,23 +46,23 @@ function computeStreak(habit: Tables<'habits'>, doneDates: Set<string>): HabitSt
     }
   }
 
-  return { current, longest }
+  return { current, longest, percent: totalScheduled > 0 ? doneCount / totalScheduled : 0 }
 }
 
-export function useHabitStreaks(
+export function useHabitStats(
   habits: Tables<'habits'>[],
   logs: Tables<'habit_logs'>[],
-): Map<string, HabitStreak> {
+): Map<string, HabitStat> {
   return useMemo(() => {
     const doneByHabit = new Map<string, Set<string>>()
     for (const log of logs) {
       if (!doneByHabit.has(log.habit_id)) doneByHabit.set(log.habit_id, new Set())
       doneByHabit.get(log.habit_id)!.add(log.data)
     }
-    const streaks = new Map<string, HabitStreak>()
+    const stats = new Map<string, HabitStat>()
     for (const habit of habits) {
-      streaks.set(habit.id, computeStreak(habit, doneByHabit.get(habit.id) ?? new Set()))
+      stats.set(habit.id, computeStats(habit, doneByHabit.get(habit.id) ?? new Set()))
     }
-    return streaks
+    return stats
   }, [habits, logs])
 }

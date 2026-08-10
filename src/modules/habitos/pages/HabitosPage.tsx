@@ -1,6 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs'
-import { HojeTab } from '@/modules/habitos/components/hoje/HojeTab'
-import { MapaTab } from '@/modules/habitos/components/mapa/MapaTab'
+import { GradeTab } from '@/modules/habitos/components/grade/GradeTab'
 import { CorpoTab } from '@/modules/habitos/components/corpo/CorpoTab'
 
 export default function HabitosPage() {
@@ -10,17 +9,13 @@ export default function HabitosPage() {
         <h1 className="font-display text-2xl font-semibold">Hábitos</h1>
       </div>
 
-      <Tabs defaultValue="hoje">
+      <Tabs defaultValue="grade">
         <TabsList>
-          <TabsTrigger value="hoje">Hoje</TabsTrigger>
-          <TabsTrigger value="mapa">Mapa</TabsTrigger>
+          <TabsTrigger value="grade">Grade</TabsTrigger>
           <TabsTrigger value="corpo">Corpo</TabsTrigger>
         </TabsList>
-        <TabsContent value="hoje" className="mt-4">
-          <HojeTab />
-        </TabsContent>
-        <TabsContent value="mapa" className="mt-4">
-          <MapaTab />
+        <TabsContent value="grade" className="mt-4">
+          <GradeTab />
         </TabsContent>
         <TabsContent value="corpo" className="mt-4">
           <CorpoTab />
