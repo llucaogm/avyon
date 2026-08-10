@@ -1,5 +1,4 @@
 import { forwardRef } from 'react'
-import { parseISO } from 'date-fns'
 import { MoreVertical, Pencil, Trash2 } from 'lucide-react'
 import { Checkbox } from '@/shared/components/ui/checkbox'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/components/ui/table'
@@ -12,7 +11,8 @@ import {
 import { ConfirmCheck } from '@/shared/components/common/ConfirmCheck'
 import { getHabitIcon } from '@/modules/habitos/lib/habitIcons'
 import { isHabitScheduledOn } from '@/modules/habitos/lib/habitSchedule'
-import { buildHabitGridWeeks } from '@/modules/habitos/lib/gridDates'
+import { buildHabitGridDays } from '@/modules/habitos/lib/gridDates'
+import { cn } from '@/shared/lib/utils'
 import type { HabitStat } from '@/modules/habitos/hooks/useHabitStats'
 import type { Tables } from '@/shared/types/database.types'
 
@@ -31,43 +31,30 @@ export const HabitGrid = forwardRef<HTMLDivElement, HabitGridProps>(function Hab
   { habits, doneByHabit, stats, pendingCells, justConfirmedCells, onToggleCell, onEditHabit, onDeleteHabit },
   scrollRef,
 ) {
-  const weeks = buildHabitGridWeeks()
+  const days = buildHabitGridDays()
 
   return (
     <div className="rounded-md border">
       <Table className="w-auto" containerRef={scrollRef}>
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <TableHead className="bg-card sticky left-0 z-20 min-w-[160px]" />
-            {weeks.map((week) => (
+            <TableHead className="bg-card sticky left-0 z-20 min-w-[180px]" />
+            {days.map((day) => (
               <TableHead
-                key={week.label}
-                colSpan={week.days.length}
-                className="text-center text-xs text-muted-foreground"
+                key={day.date}
+                className={cn('w-11 p-1 text-center align-bottom', day.isToday && 'bg-primary/10')}
               >
-                {week.label}
+                <div className="flex flex-col items-center gap-0.5">
+                  <span className="h-3 text-[9px] leading-none text-muted-foreground">
+                    {day.monthLabel ?? ''}
+                  </span>
+                  <span className="text-[10px] leading-none text-muted-foreground">{day.weekdayLetter}</span>
+                  <span className={cn('text-xs leading-none', day.isToday && 'text-primary font-semibold')}>
+                    {day.dayOfMonth}
+                  </span>
+                </div>
               </TableHead>
             ))}
-          </TableRow>
-          <TableRow className="hover:bg-transparent">
-            <TableHead className="bg-card sticky left-0 z-20 min-w-[160px]" />
-            {weeks.flatMap((week, wi) =>
-              week.days.map((day, di) =>
-                day ? (
-                  <TableHead key={day.date} className="w-9 p-1 text-center">
-                    {day.isToday ? (
-                      <span className="bg-primary text-primary-foreground mx-auto flex size-6 items-center justify-center rounded-full text-xs">
-                        {day.dayOfMonth}
-                      </span>
-                    ) : (
-                      <span className="text-xs">{day.dayOfMonth}</span>
-                    )}
-                  </TableHead>
-                ) : (
-                  <TableHead key={`${wi}-${di}`} className="w-9 p-1" />
-                ),
-              ),
-            )}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -77,7 +64,7 @@ export const HabitGrid = forwardRef<HTMLDivElement, HabitGridProps>(function Hab
             const done = doneByHabit.get(habit.id)
             return (
               <TableRow key={habit.id}>
-                <TableCell className="bg-card sticky left-0 z-10 border-r min-w-[160px]">
+                <TableCell className="bg-card sticky left-0 z-10 min-w-[180px] border-r">
                   <div className="flex items-center gap-2">
                     <span className="bg-primary/10 text-primary flex size-8 shrink-0 items-center justify-center rounded-full">
                       <Icon className="size-4" />
@@ -111,39 +98,42 @@ export const HabitGrid = forwardRef<HTMLDivElement, HabitGridProps>(function Hab
                     </DropdownMenu>
                   </div>
                 </TableCell>
-                {weeks.flatMap((week, wi) =>
-                  week.days.map((day, di) => {
-                    if (!day) return <TableCell key={`${wi}-${di}`} className="w-9 p-1" />
-
-                    if (!isHabitScheduledOn(habit, parseISO(day.date))) {
-                      return (
-                        <TableCell key={day.date} className="w-9 p-1 text-center text-muted-foreground/30">
-                          —
-                        </TableCell>
-                      )
-                    }
-
-                    const key = `${habit.id}:${day.date}`
-                    const isDone = done?.has(day.date) ?? false
-
+                {days.map((day) => {
+                  if (!isHabitScheduledOn(habit, new Date(`${day.date}T00:00:00`))) {
                     return (
-                      <TableCell key={day.date} className="w-9 p-1 text-center">
-                        <span className="flex items-center justify-center">
-                          {justConfirmedCells.has(key) ? (
-                            <ConfirmCheck color="var(--primary)" />
-                          ) : (
-                            <Checkbox
-                              checked={isDone}
-                              disabled={pendingCells.has(key)}
-                              onCheckedChange={(checked) => onToggleCell(habit.id, day.date, !!checked)}
-                              className="size-5"
-                            />
-                          )}
-                        </span>
+                      <TableCell
+                        key={day.date}
+                        className={cn('w-11 p-1 text-center', day.isToday && 'bg-primary/10')}
+                      >
+                        <span className="text-muted-foreground/25">·</span>
                       </TableCell>
                     )
-                  }),
-                )}
+                  }
+
+                  const key = `${habit.id}:${day.date}`
+                  const isDone = done?.has(day.date) ?? false
+
+                  return (
+                    <TableCell
+                      key={day.date}
+                      className={cn('w-11 p-1 text-center', day.isToday && 'bg-primary/10')}
+                      title={day.date}
+                    >
+                      <span className="flex items-center justify-center">
+                        {justConfirmedCells.has(key) ? (
+                          <ConfirmCheck color="var(--primary)" />
+                        ) : (
+                          <Checkbox
+                            checked={isDone}
+                            disabled={pendingCells.has(key)}
+                            onCheckedChange={(checked) => onToggleCell(habit.id, day.date, !!checked)}
+                            className="border-border data-checked:border-primary size-8 rounded-lg border-2 [&>svg]:size-4"
+                          />
+                        )}
+                      </span>
+                    </TableCell>
+                  )
+                })}
               </TableRow>
             )
           })}

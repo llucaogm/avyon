@@ -1,44 +1,41 @@
 import { format, isSameDay, subDays } from 'date-fns'
 import { HABIT_LOG_WINDOW_DAYS } from '@/modules/habitos/hooks/useHabitLogs'
 
+const WEEKDAY_LETTERS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
+const MONTH_ABBREV = [
+  'jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez',
+]
+
 export interface GridDay {
   date: string
   dayOfMonth: number
+  weekdayLetter: string
+  monthLabel: string | null
   isToday: boolean
 }
 
-export interface GridWeek {
-  label: string
-  days: (GridDay | null)[]
-}
-
 /**
- * Builds the habit grid's columns: `windowDays` back from today, oldest first,
- * left-padded with nulls to the previous Sunday (same domingo=0 convention as
- * isHabitScheduledOn) so weeks group cleanly into 7-day blocks. colSpan for each
- * week's header label is always `week.days.length`, so a partial first/last week
- * never desyncs the header from the body.
+ * Flat, oldest-to-newest day list for the habit grid — no week-block padding,
+ * since the header no longer groups by calendar week (see HabitGrid). Each day
+ * carries a weekday initial (rhythm — did I skip the weekend) and a month label
+ * that's only set on the 1st of a month or the very first rendered day, so the
+ * header can anchor the calendar without repeating a month name every column.
  */
-export function buildHabitGridWeeks(windowDays = HABIT_LOG_WINDOW_DAYS): GridWeek[] {
+export function buildHabitGridDays(windowDays = HABIT_LOG_WINDOW_DAYS): GridDay[] {
   const today = new Date()
-  const start = subDays(today, windowDays - 1)
-
   const days: GridDay[] = []
+
   for (let i = 0; i < windowDays; i++) {
     const d = subDays(today, windowDays - 1 - i)
+    const dayOfMonth = d.getDate()
     days.push({
       date: format(d, 'yyyy-MM-dd'),
-      dayOfMonth: d.getDate(),
+      dayOfMonth,
+      weekdayLetter: WEEKDAY_LETTERS[d.getDay()],
+      monthLabel: dayOfMonth === 1 || i === 0 ? MONTH_ABBREV[d.getMonth()] : null,
       isToday: isSameDay(d, today),
     })
   }
 
-  const padded: (GridDay | null)[] = [...Array(start.getDay()).fill(null), ...days]
-
-  const weeks: GridWeek[] = []
-  for (let i = 0; i < padded.length; i += 7) {
-    weeks.push({ label: `S${weeks.length + 1}`, days: padded.slice(i, i + 7) })
-  }
-
-  return weeks
+  return days
 }
