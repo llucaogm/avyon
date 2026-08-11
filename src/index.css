@@ -111,6 +111,13 @@
     --group-objetivo-foreground: #F5F7FA;
     --group-reserva: #5B93F7;
     --group-reserva-foreground: #071022;
+
+    --study-teal: var(--primary);
+    --study-blue: var(--brand-blue);
+    --study-amber: #E8A33D;
+    --study-rose: #E56399;
+    --study-violet: #9B7FE8;
+    --study-green: #4FB870;
 }
 
 @layer base {

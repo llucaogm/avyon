@@ -462,6 +462,86 @@ export type Database = {
           },
         ]
       }
+      materias: {
+        Row: {
+          cor: Database["public"]["Enums"]["study_color"]
+          created_at: string
+          id: string
+          nome: string
+          user_id: string
+        }
+        Insert: {
+          cor?: Database["public"]["Enums"]["study_color"]
+          created_at?: string
+          id?: string
+          nome: string
+          user_id: string
+        }
+        Update: {
+          cor?: Database["public"]["Enums"]["study_color"]
+          created_at?: string
+          id?: string
+          nome?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notas: {
+        Row: {
+          chaves: string[]
+          conteudo: string | null
+          cor: Database["public"]["Enums"]["study_color"]
+          created_at: string
+          fonte: string | null
+          id: string
+          materia_id: string | null
+          resumo: string | null
+          tipo: Database["public"]["Enums"]["nota_tipo"]
+          titulo: string
+          updated_at: string
+          url: string | null
+          user_id: string
+        }
+        Insert: {
+          chaves?: string[]
+          conteudo?: string | null
+          cor?: Database["public"]["Enums"]["study_color"]
+          created_at?: string
+          fonte?: string | null
+          id?: string
+          materia_id?: string | null
+          resumo?: string | null
+          tipo?: Database["public"]["Enums"]["nota_tipo"]
+          titulo: string
+          updated_at?: string
+          url?: string | null
+          user_id: string
+        }
+        Update: {
+          chaves?: string[]
+          conteudo?: string | null
+          cor?: Database["public"]["Enums"]["study_color"]
+          created_at?: string
+          fonte?: string | null
+          id?: string
+          materia_id?: string | null
+          resumo?: string | null
+          tipo?: Database["public"]["Enums"]["nota_tipo"]
+          titulo?: string
+          updated_at?: string
+          url?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notas_materia_id_fkey"
+            columns: ["materia_id"]
+            isOneToOne: false
+            referencedRelation: "materias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       peso_logs: {
         Row: {
           created_at: string
@@ -569,6 +649,15 @@ export type Database = {
       expense_frequency: "mensal" | "anual" | "semestral" | "unico"
       habit_frequency: "diaria" | "dias_da_semana"
       income_recurrence: "mensal" | "anual" | "semestral" | "eventual"
+      nota_tipo:
+        | "rascunho"
+        | "livro"
+        | "artigo"
+        | "video"
+        | "aula"
+        | "podcast"
+        | "ideia"
+      study_color: "teal" | "blue" | "amber" | "rose" | "violet" | "green"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -701,6 +790,16 @@ export const Constants = {
       expense_frequency: ["mensal", "anual", "semestral", "unico"],
       habit_frequency: ["diaria", "dias_da_semana"],
       income_recurrence: ["mensal", "anual", "semestral", "eventual"],
+      nota_tipo: [
+        "rascunho",
+        "livro",
+        "artigo",
+        "video",
+        "aula",
+        "podcast",
+        "ideia",
+      ],
+      study_color: ["teal", "blue", "amber", "rose", "violet", "green"],
     },
   },
 } as const

@@ -22,6 +22,10 @@ import HowToUsePage from '@/modules/financeiro/pages/HowToUsePage'
 import { HabitosShell } from '@/modules/habitos/components/layout/HabitosShell'
 import HabitosPage from '@/modules/habitos/pages/HabitosPage'
 
+import { EstudosShell } from '@/modules/estudos/components/layout/EstudosShell'
+import HojePage from '@/modules/estudos/pages/HojePage'
+import NotasPage from '@/modules/estudos/pages/NotasPage'
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -47,6 +51,11 @@ function App() {
 
                 <Route path="/habitos" element={<HabitosShell />}>
                   <Route index element={<HabitosPage />} />
+                </Route>
+
+                <Route path="/estudos" element={<EstudosShell />}>
+                  <Route index element={<HojePage />} />
+                  <Route path="notas" element={<NotasPage />} />
                 </Route>
               </Route>
             </Route>

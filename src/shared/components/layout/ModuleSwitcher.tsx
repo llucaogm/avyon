@@ -1,10 +1,11 @@
 import { NavLink } from 'react-router-dom'
-import { Wallet, ListChecks } from 'lucide-react'
+import { Wallet, ListChecks, GraduationCap } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
 
 const MODULES = [
   { to: '/financeiro', label: 'Financeiro', icon: Wallet },
   { to: '/habitos', label: 'Hábitos', icon: ListChecks },
+  { to: '/estudos', label: 'Estudos', icon: GraduationCap },
 ]
 
 export function ModuleSwitcher() {
