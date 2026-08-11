@@ -9,6 +9,10 @@ export interface PositionedNode {
   x: number
   y: number
   depth: number
+  /** Present only on a node whose children are all leaves — they're absorbed
+   * here as a bullet list instead of being placed as separate radial nodes,
+   * since a "detalhes" level fans out too fast to lay out cleanly. */
+  detalhes?: string[]
 }
 
 export interface MindMapEdge {
@@ -19,11 +23,17 @@ export interface MindMapEdge {
 }
 
 /** Distance from a node to its children, indexed by the parent's depth (root = 0). */
-const RADIUS_STEPS = [230, 190, 160]
+const RADIUS_STEPS = [240, 210]
 
-function countLeaves(node: MindMapNode): number {
-  if (node.filhos.length === 0) return 1
-  return node.filhos.reduce((sum, child) => sum + countLeaves(child), 0)
+/** A node is terminal for layout purposes once its own children are all leaves —
+ * they stop being placed as separate nodes and become inline bullet text instead. */
+function isTerminal(node: MindMapNode): boolean {
+  return node.filhos.length === 0 || node.filhos.every((child) => child.filhos.length === 0)
+}
+
+function countTerminals(node: MindMapNode): number {
+  if (isTerminal(node)) return 1
+  return node.filhos.reduce((sum, child) => sum + countTerminals(child), 0)
 }
 
 /**
@@ -31,9 +41,11 @@ function countLeaves(node: MindMapNode): number {
  * fan out across the angular slice it inherited from its own position in its
  * parent's fan — so a subtree never overlaps a sibling subtree.
  *
- * Each child's share of that slice is weighted by how many leaves live under
- * it (not divided equally) — otherwise a branch with 10 leaves gets squeezed
- * into the same angle as a sibling branch with 2, and everything overlaps.
+ * Each child's share of that slice is weighted by how many terminal nodes live
+ * under it (not divided equally) — otherwise a branch with many descendants
+ * gets squeezed into the same angle as a sibling with few, and everything
+ * overlaps. Recursion stops one level early (see `isTerminal`) so a bushy
+ * "details" level never has to fight for its own angular space.
  */
 export function layoutRadialTree(root: MindMapNode): { nodes: PositionedNode[]; edges: MindMapEdge[] } {
   const nodes: PositionedNode[] = []
@@ -50,19 +62,26 @@ export function layoutRadialTree(root: MindMapNode): { nodes: PositionedNode[]; 
     parent?: { x: number; y: number },
   ) {
     const id = `n${counter++}`
-    nodes.push({ id, titulo: node.titulo, x, y, depth })
+    const terminal = isTerminal(node)
+    nodes.push({
+      id,
+      titulo: node.titulo,
+      x,
+      y,
+      depth,
+      detalhes: terminal && node.filhos.length > 0 ? node.filhos.map((f) => f.titulo) : undefined,
+    })
     if (parent) edges.push({ x1: parent.x, y1: parent.y, x2: x, y2: y })
+    if (terminal) return
 
     const children = node.filhos
-    if (children.length === 0) return
-
     const step = RADIUS_STEPS[Math.min(depth, RADIUS_STEPS.length - 1)]
     const span = angleEnd - angleStart
-    const totalLeaves = children.reduce((sum, child) => sum + countLeaves(child), 0)
+    const totalTerminals = children.reduce((sum, child) => sum + countTerminals(child), 0)
 
     let cursor = angleStart
     children.forEach((child) => {
-      const childSpan = span * (countLeaves(child) / totalLeaves)
+      const childSpan = span * (countTerminals(child) / totalTerminals)
       const angle = cursor + childSpan / 2
       const cx = x + step * Math.cos(angle)
       const cy = y + step * Math.sin(angle)

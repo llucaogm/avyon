@@ -25,9 +25,8 @@ function distance(a: { x: number; y: number }, b: { x: number; y: number }) {
 
 function nodeSize(depth: number) {
   if (depth === 0) return { w: 210, h: 68 }
-  if (depth === 1) return { w: 175, h: 58 }
-  if (depth === 2) return { w: 155, h: 54 }
-  return { w: 145, h: 54 }
+  if (depth === 1) return { w: 180, h: 60 }
+  return { w: 230, h: 108 }
 }
 
 export function MindMapCanvas({ root }: { root: MindMapNode }) {
@@ -138,28 +137,45 @@ export function MindMapCanvas({ root }: { root: MindMapNode }) {
           {nodes.map((node, i) => {
             const { w, h } = nodeSize(node.depth)
             const cor = STUDY_COLORS[i % STUDY_COLORS.length]
+            const detalhes = node.detalhes?.slice(0, 3)
+            const detalhesRestantes = (node.detalhes?.length ?? 0) - (detalhes?.length ?? 0)
+
             return (
               <foreignObject key={node.id} x={node.x - w / 2} y={node.y - h / 2} width={w} height={h}>
-                <div
-                  className={cn(
-                    'flex h-full w-full items-center justify-center overflow-hidden rounded-2xl px-2.5 py-1 text-center leading-tight break-words',
-                    node.depth === 0 &&
-                      'bg-gradient-brand font-display line-clamp-2 text-sm font-semibold text-primary-foreground',
-                    node.depth === 1 && 'line-clamp-2 border text-xs font-medium text-foreground',
-                    node.depth === 2 && 'line-clamp-2 border bg-card text-xs text-foreground',
-                    node.depth >= 3 && 'line-clamp-3 text-[11px] text-muted-foreground',
-                  )}
-                  style={
-                    node.depth === 1
-                      ? {
-                          backgroundColor: `color-mix(in oklab, ${studyColorVar(cor)} 22%, var(--card))`,
-                          borderColor: studyColorVar(cor),
-                        }
-                      : undefined
-                  }
-                >
-                  {node.titulo}
-                </div>
+                {node.depth <= 1 ? (
+                  <div
+                    className={cn(
+                      'flex h-full w-full items-center justify-center overflow-hidden rounded-2xl px-2.5 py-1 text-center leading-tight break-words',
+                      node.depth === 0 &&
+                        'bg-gradient-brand font-display line-clamp-2 text-sm font-semibold text-primary-foreground',
+                      node.depth === 1 && 'line-clamp-2 border text-xs font-medium text-foreground',
+                    )}
+                    style={
+                      node.depth === 1
+                        ? {
+                            backgroundColor: `color-mix(in oklab, ${studyColorVar(cor)} 22%, var(--card))`,
+                            borderColor: studyColorVar(cor),
+                          }
+                        : undefined
+                    }
+                  >
+                    {node.titulo}
+                  </div>
+                ) : (
+                  <div className="flex h-full w-full flex-col justify-center gap-1 overflow-hidden rounded-2xl border bg-card px-3 py-2 text-left">
+                    <p className="line-clamp-2 text-xs font-medium break-words text-foreground">{node.titulo}</p>
+                    {detalhes && detalhes.length > 0 && (
+                      <ul className="flex flex-col gap-0.5 text-[10px] leading-snug text-muted-foreground">
+                        {detalhes.map((d, di) => (
+                          <li key={di} className="truncate">
+                            • {d}
+                          </li>
+                        ))}
+                        {detalhesRestantes > 0 && <li className="truncate">+{detalhesRestantes} mais</li>}
+                      </ul>
+                    )}
+                  </div>
+                )}
               </foreignObject>
             )
           })}
