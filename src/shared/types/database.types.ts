@@ -497,6 +497,36 @@ export type Database = {
           },
         ]
       }
+      mapas_mentais: {
+        Row: {
+          conteudo: Json
+          created_at: string
+          id: string
+          nota_ids: string[]
+          titulo: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          conteudo: Json
+          created_at?: string
+          id?: string
+          nota_ids?: string[]
+          titulo: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          conteudo?: Json
+          created_at?: string
+          id?: string
+          nota_ids?: string[]
+          titulo?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       materias: {
         Row: {
           cor: Database["public"]["Enums"]["study_color"]

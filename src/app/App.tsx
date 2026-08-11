@@ -27,6 +27,8 @@ import HojePage from '@/modules/estudos/pages/HojePage'
 import NotasPage from '@/modules/estudos/pages/NotasPage'
 import ChatListPage from '@/modules/estudos/pages/ChatListPage'
 import ChatThreadPage from '@/modules/estudos/pages/ChatThreadPage'
+import MapasListPage from '@/modules/estudos/pages/MapasListPage'
+import MapaViewPage from '@/modules/estudos/pages/MapaViewPage'
 
 function App() {
   return (
@@ -61,6 +63,8 @@ function App() {
                   <Route path="chat" element={<ChatListPage />} />
                   <Route path="chat/nova" element={<ChatThreadPage />} />
                   <Route path="chat/:conversaId" element={<ChatThreadPage />} />
+                  <Route path="mapas" element={<MapasListPage />} />
+                  <Route path="mapas/:mapaId" element={<MapaViewPage />} />
                 </Route>
               </Route>
             </Route>

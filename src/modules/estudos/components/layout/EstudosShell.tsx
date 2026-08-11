@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { Home, StickyNote, MessageCircle } from 'lucide-react'
+import { Home, StickyNote, MessageCircle, Network } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
 import { SlidingBottomNav, type SlidingBottomNavItem } from '@/shared/components/layout/SlidingBottomNav'
 
@@ -7,6 +7,7 @@ const estudosNav: SlidingBottomNavItem[] = [
   { to: '/estudos', label: 'Hoje', icon: Home, end: true },
   { to: '/estudos/notas', label: 'Anotações', icon: StickyNote },
   { to: '/estudos/chat', label: 'Chat', icon: MessageCircle },
+  { to: '/estudos/mapas', label: 'Mapas', icon: Network },
 ]
 
 export function EstudosShell() {
