@@ -19,12 +19,21 @@ export interface MindMapEdge {
 }
 
 /** Distance from a node to its children, indexed by the parent's depth (root = 0). */
-const RADIUS_STEPS = [210, 170, 140]
+const RADIUS_STEPS = [230, 190, 160]
+
+function countLeaves(node: MindMapNode): number {
+  if (node.filhos.length === 0) return 1
+  return node.filhos.reduce((sum, child) => sum + countLeaves(child), 0)
+}
 
 /**
  * Radial dendrogram layout: the root sits at the origin, each node's children
  * fan out across the angular slice it inherited from its own position in its
  * parent's fan — so a subtree never overlaps a sibling subtree.
+ *
+ * Each child's share of that slice is weighted by how many leaves live under
+ * it (not divided equally) — otherwise a branch with 10 leaves gets squeezed
+ * into the same angle as a sibling branch with 2, and everything overlaps.
  */
 export function layoutRadialTree(root: MindMapNode): { nodes: PositionedNode[]; edges: MindMapEdge[] } {
   const nodes: PositionedNode[] = []
@@ -49,12 +58,16 @@ export function layoutRadialTree(root: MindMapNode): { nodes: PositionedNode[]; 
 
     const step = RADIUS_STEPS[Math.min(depth, RADIUS_STEPS.length - 1)]
     const span = angleEnd - angleStart
-    const slice = span / children.length
-    children.forEach((child, i) => {
-      const angle = angleStart + slice * (i + 0.5)
+    const totalLeaves = children.reduce((sum, child) => sum + countLeaves(child), 0)
+
+    let cursor = angleStart
+    children.forEach((child) => {
+      const childSpan = span * (countLeaves(child) / totalLeaves)
+      const angle = cursor + childSpan / 2
       const cx = x + step * Math.cos(angle)
       const cy = y + step * Math.sin(angle)
-      place(child, depth + 1, cx, cy, angle - slice / 2, angle + slice / 2, { x, y })
+      place(child, depth + 1, cx, cy, cursor, cursor + childSpan, { x, y })
+      cursor += childSpan
     })
   }
 
