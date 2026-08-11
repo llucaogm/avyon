@@ -65,6 +65,9 @@
 
 /* Avyon is dark-only by design — no separate light/.dark split. */
 :root {
+    /* Tells the browser to render native chrome (scrollbars, textarea resize
+       grips, form controls) in its dark variant instead of defaulting to light. */
+    color-scheme: dark;
     --background: #0B0C10;
     --foreground: #F5F7FA;
     --card: #131519;
@@ -130,6 +133,35 @@
   html {
     @apply font-sans;
     }
+}
+
+/* ---- Scrollbars: thin, tokenized to match the theme instead of the OS default ---- */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--muted-foreground);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 @layer utilities {

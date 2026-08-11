@@ -142,6 +142,41 @@ export type Database = {
           },
         ]
       }
+      conversas: {
+        Row: {
+          created_at: string
+          id: string
+          nota_id: string | null
+          titulo: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nota_id?: string | null
+          titulo?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nota_id?: string | null
+          titulo?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversas_nota_id_fkey"
+            columns: ["nota_id"]
+            isOneToOne: false
+            referencedRelation: "notas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       emergency_fund_config: {
         Row: {
           created_at: string
@@ -486,6 +521,41 @@ export type Database = {
         }
         Relationships: []
       }
+      mensagens: {
+        Row: {
+          conteudo: string
+          conversa_id: string
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["mensagem_role"]
+          user_id: string
+        }
+        Insert: {
+          conteudo: string
+          conversa_id: string
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["mensagem_role"]
+          user_id: string
+        }
+        Update: {
+          conteudo?: string
+          conversa_id?: string
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["mensagem_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mensagens_conversa_id_fkey"
+            columns: ["conversa_id"]
+            isOneToOne: false
+            referencedRelation: "conversas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notas: {
         Row: {
           chaves: string[]
@@ -649,6 +719,7 @@ export type Database = {
       expense_frequency: "mensal" | "anual" | "semestral" | "unico"
       habit_frequency: "diaria" | "dias_da_semana"
       income_recurrence: "mensal" | "anual" | "semestral" | "eventual"
+      mensagem_role: "user" | "assistant"
       nota_tipo:
         | "rascunho"
         | "livro"
@@ -790,6 +861,7 @@ export const Constants = {
       expense_frequency: ["mensal", "anual", "semestral", "unico"],
       habit_frequency: ["diaria", "dias_da_semana"],
       income_recurrence: ["mensal", "anual", "semestral", "eventual"],
+      mensagem_role: ["user", "assistant"],
       nota_tipo: [
         "rascunho",
         "livro",

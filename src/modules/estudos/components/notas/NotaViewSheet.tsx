@@ -1,5 +1,8 @@
+import { useNavigate } from 'react-router-dom'
+import { MessageCircle } from 'lucide-react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/shared/components/ui/sheet'
 import { Badge } from '@/shared/components/ui/badge'
+import { Button } from '@/shared/components/ui/button'
 import { formatNoteText } from '@/modules/estudos/lib/noteFormat'
 import type { Tables } from '@/shared/types/database.types'
 
@@ -20,6 +23,8 @@ interface NotaViewSheetProps {
 }
 
 export function NotaViewSheet({ nota, materiaNome, onOpenChange }: NotaViewSheetProps) {
+  const navigate = useNavigate()
+
   return (
     <Sheet open={!!nota} onOpenChange={onOpenChange}>
       <SheetContent side="bottom" className="max-h-[90vh] overflow-y-auto">
@@ -44,6 +49,19 @@ export function NotaViewSheet({ nota, materiaNome, onOpenChange }: NotaViewSheet
                   </a>
                 )}
               </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="self-start"
+                onClick={() => {
+                  onOpenChange(false)
+                  navigate(`/estudos/chat/nova?notaId=${nota.id}`)
+                }}
+              >
+                <MessageCircle className="size-4" />
+                Conversar sobre isso
+              </Button>
 
               {nota.resumo && (
                 <div>

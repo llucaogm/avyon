@@ -25,6 +25,8 @@ import HabitosPage from '@/modules/habitos/pages/HabitosPage'
 import { EstudosShell } from '@/modules/estudos/components/layout/EstudosShell'
 import HojePage from '@/modules/estudos/pages/HojePage'
 import NotasPage from '@/modules/estudos/pages/NotasPage'
+import ChatListPage from '@/modules/estudos/pages/ChatListPage'
+import ChatThreadPage from '@/modules/estudos/pages/ChatThreadPage'
 
 function App() {
   return (
@@ -56,6 +58,9 @@ function App() {
                 <Route path="/estudos" element={<EstudosShell />}>
                   <Route index element={<HojePage />} />
                   <Route path="notas" element={<NotasPage />} />
+                  <Route path="chat" element={<ChatListPage />} />
+                  <Route path="chat/nova" element={<ChatThreadPage />} />
+                  <Route path="chat/:conversaId" element={<ChatThreadPage />} />
                 </Route>
               </Route>
             </Route>
