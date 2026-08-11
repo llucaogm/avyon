@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from 'react'
 import { Plus, Minus, LocateFixed } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
-import { layoutRadialTree, type MindMapNode } from '@/modules/estudos/lib/mindMapLayout'
+import { layoutRadialTree, type MindMapNode, type NodePositions } from '@/modules/estudos/lib/mindMapLayout'
 import { STUDY_COLORS, studyColorVar } from '@/modules/estudos/lib/studyColors'
 import { cn } from '@/shared/lib/utils'
 
@@ -29,12 +29,30 @@ function nodeSize(depth: number) {
   return { w: 230, h: 108 }
 }
 
-export function MindMapCanvas({ root }: { root: MindMapNode }) {
+interface MindMapCanvasProps {
+  root: MindMapNode
+  posicoes?: NodePositions
+  onMoveNode?: (posicoes: NodePositions) => void
+}
+
+export function MindMapCanvas({ root, posicoes, onMoveNode }: MindMapCanvasProps) {
   const { nodes, edges } = useMemo(() => layoutRadialTree(root), [root])
+  const nodesById = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes])
 
   const containerRef = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ width: 800, height: 500 })
   const [transform, setTransform] = useState<Transform>({ x: 0, y: 0, scale: 1 })
+
+  // Manual overrides from dragging — starts from whatever was persisted, and
+  // resets whenever the map is regenerated (posicoes comes back as {}).
+  const [positions, setPositions] = useState<NodePositions>(posicoes ?? {})
+  const positionsRef = useRef(positions)
+  useEffect(() => {
+    setPositions(posicoes ?? {})
+  }, [posicoes])
+  useEffect(() => {
+    positionsRef.current = positions
+  }, [positions])
 
   useEffect(() => {
     const el = containerRef.current
@@ -50,6 +68,14 @@ export function MindMapCanvas({ root }: { root: MindMapNode }) {
   const pointersRef = useRef<Map<number, { x: number; y: number }>>(new Map())
   const dragRef = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(null)
   const pinchRef = useRef<{ startDist: number; startScale: number } | null>(null)
+  const dragNodeRef = useRef<{
+    id: string
+    pointerId: number
+    startX: number
+    startY: number
+    baseX: number
+    baseY: number
+  } | null>(null)
 
   function handlePointerDown(e: ReactPointerEvent<SVGSVGElement>) {
     e.currentTarget.setPointerCapture(e.pointerId)
@@ -107,6 +133,46 @@ export function MindMapCanvas({ root }: { root: MindMapNode }) {
     setTransform({ x: 0, y: 0, scale: 1 })
   }
 
+  // Dragging a node moves that node instead of panning the canvas — stopPropagation
+  // keeps the svg's own pointer handlers (pan) from also firing.
+  function handleNodePointerDown(e: ReactPointerEvent<HTMLDivElement>, node: { id: string; x: number; y: number }) {
+    e.stopPropagation()
+    e.currentTarget.setPointerCapture(e.pointerId)
+    const current = positions[node.id] ?? { x: node.x, y: node.y }
+    dragNodeRef.current = {
+      id: node.id,
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      baseX: current.x,
+      baseY: current.y,
+    }
+  }
+
+  function handleNodePointerMove(e: ReactPointerEvent<HTMLDivElement>) {
+    const drag = dragNodeRef.current
+    if (!drag || drag.pointerId !== e.pointerId) return
+    e.stopPropagation()
+    const dx = (e.clientX - drag.startX) / transform.scale
+    const dy = (e.clientY - drag.startY) / transform.scale
+    setPositions((prev) => ({ ...prev, [drag.id]: { x: drag.baseX + dx, y: drag.baseY + dy } }))
+  }
+
+  function handleNodePointerUp(e: ReactPointerEvent<HTMLDivElement>) {
+    const drag = dragNodeRef.current
+    if (!drag || drag.pointerId !== e.pointerId) return
+    e.stopPropagation()
+    dragNodeRef.current = null
+    onMoveNode?.(positionsRef.current)
+  }
+
+  function effectivePos(id: string): { x: number; y: number } {
+    const override = positions[id]
+    if (override) return override
+    const node = nodesById.get(id)
+    return node ? { x: node.x, y: node.y } : { x: 0, y: 0 }
+  }
+
   const cx = size.width / 2
   const cy = size.height / 2
 
@@ -123,29 +189,38 @@ export function MindMapCanvas({ root }: { root: MindMapNode }) {
         className="touch-none cursor-grab active:cursor-grabbing"
       >
         <g transform={`translate(${cx + transform.x} ${cy + transform.y}) scale(${transform.scale})`}>
-          {edges.map((edge, i) => (
-            <line
-              key={i}
-              x1={edge.x1}
-              y1={edge.y1}
-              x2={edge.x2}
-              y2={edge.y2}
-              stroke="var(--border)"
-              strokeWidth={1.5}
-            />
-          ))}
+          {edges.map((edge, i) => {
+            const from = effectivePos(edge.fromId)
+            const to = effectivePos(edge.toId)
+            return (
+              <line
+                key={i}
+                x1={from.x}
+                y1={from.y}
+                x2={to.x}
+                y2={to.y}
+                stroke="var(--border)"
+                strokeWidth={1.5}
+              />
+            )
+          })}
           {nodes.map((node, i) => {
             const { w, h } = nodeSize(node.depth)
+            const pos = effectivePos(node.id)
             const cor = STUDY_COLORS[i % STUDY_COLORS.length]
             const detalhes = node.detalhes?.slice(0, 3)
             const detalhesRestantes = (node.detalhes?.length ?? 0) - (detalhes?.length ?? 0)
 
             return (
-              <foreignObject key={node.id} x={node.x - w / 2} y={node.y - h / 2} width={w} height={h}>
+              <foreignObject key={node.id} x={pos.x - w / 2} y={pos.y - h / 2} width={w} height={h}>
                 {node.depth <= 1 ? (
                   <div
+                    onPointerDown={(e) => handleNodePointerDown(e, node)}
+                    onPointerMove={handleNodePointerMove}
+                    onPointerUp={handleNodePointerUp}
+                    onPointerCancel={handleNodePointerUp}
                     className={cn(
-                      'flex h-full w-full items-center justify-center overflow-hidden rounded-2xl px-2.5 py-1 text-center leading-tight break-words',
+                      'flex h-full w-full cursor-grab items-center justify-center overflow-hidden rounded-2xl px-2.5 py-1 text-center leading-tight break-words touch-none active:cursor-grabbing',
                       node.depth === 0 &&
                         'bg-gradient-brand font-display line-clamp-2 text-sm font-semibold text-primary-foreground',
                       node.depth === 1 && 'line-clamp-2 border text-xs font-medium text-foreground',
@@ -162,7 +237,13 @@ export function MindMapCanvas({ root }: { root: MindMapNode }) {
                     {node.titulo}
                   </div>
                 ) : (
-                  <div className="flex h-full w-full flex-col justify-center gap-1 overflow-hidden rounded-2xl border bg-card px-3 py-2 text-left">
+                  <div
+                    onPointerDown={(e) => handleNodePointerDown(e, node)}
+                    onPointerMove={handleNodePointerMove}
+                    onPointerUp={handleNodePointerUp}
+                    onPointerCancel={handleNodePointerUp}
+                    className="flex h-full w-full cursor-grab touch-none flex-col justify-center gap-1 overflow-hidden rounded-2xl border bg-card px-3 py-2 text-left active:cursor-grabbing"
+                  >
                     <p className="line-clamp-2 text-xs font-medium break-words text-foreground">{node.titulo}</p>
                     {detalhes && detalhes.length > 0 && (
                       <ul className="flex flex-col gap-0.5 text-[10px] leading-snug text-muted-foreground">

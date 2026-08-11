@@ -15,11 +15,15 @@ export interface PositionedNode {
   detalhes?: string[]
 }
 
+/** Manual overrides from dragging nodes — keyed by `PositionedNode.id`,
+ * persisted as `mapas_mentais.posicoes` so a reposition survives a reload. */
+export type NodePositions = Record<string, { x: number; y: number }>
+
+/** References node ids rather than frozen coordinates, so a caller that
+ * repositions a node (drag) can still draw the edge to wherever it ended up. */
 export interface MindMapEdge {
-  x1: number
-  y1: number
-  x2: number
-  y2: number
+  fromId: string
+  toId: string
 }
 
 /** Distance from a node to its children, indexed by the parent's depth (root = 0). */
@@ -59,7 +63,7 @@ export function layoutRadialTree(root: MindMapNode): { nodes: PositionedNode[]; 
     y: number,
     angleStart: number,
     angleEnd: number,
-    parent?: { x: number; y: number },
+    parentId?: string,
   ) {
     const id = `n${counter++}`
     const terminal = isTerminal(node)
@@ -71,7 +75,7 @@ export function layoutRadialTree(root: MindMapNode): { nodes: PositionedNode[]; 
       depth,
       detalhes: terminal && node.filhos.length > 0 ? node.filhos.map((f) => f.titulo) : undefined,
     })
-    if (parent) edges.push({ x1: parent.x, y1: parent.y, x2: x, y2: y })
+    if (parentId) edges.push({ fromId: parentId, toId: id })
     if (terminal) return
 
     const children = node.filhos
@@ -85,7 +89,7 @@ export function layoutRadialTree(root: MindMapNode): { nodes: PositionedNode[]; 
       const angle = cursor + childSpan / 2
       const cx = x + step * Math.cos(angle)
       const cy = y + step * Math.sin(angle)
-      place(child, depth + 1, cx, cy, cursor, cursor + childSpan, { x, y })
+      place(child, depth + 1, cx, cy, cursor, cursor + childSpan, id)
       cursor += childSpan
     })
   }

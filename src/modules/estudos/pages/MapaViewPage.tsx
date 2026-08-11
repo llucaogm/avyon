@@ -4,9 +4,14 @@ import { ArrowLeft, RefreshCw, Trash2 } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
 import { LoadingState } from '@/shared/components/common/LoadingState'
 import { EmptyState } from '@/shared/components/common/EmptyState'
-import { useMapaMental, useCriarMapaMental, useDeleteMapaMental } from '@/modules/estudos/hooks/useMapasMentais'
+import {
+  useMapaMental,
+  useCriarMapaMental,
+  useDeleteMapaMental,
+  useSalvarPosicoes,
+} from '@/modules/estudos/hooks/useMapasMentais'
 import { MindMapCanvas } from '@/modules/estudos/components/mapas/MindMapCanvas'
-import type { MindMapNode } from '@/modules/estudos/lib/mindMapLayout'
+import type { MindMapNode, NodePositions } from '@/modules/estudos/lib/mindMapLayout'
 import { getErrorMessage } from '@/shared/lib/errors'
 
 export default function MapaViewPage() {
@@ -15,6 +20,12 @@ export default function MapaViewPage() {
   const { data: mapa, isLoading } = useMapaMental(mapaId)
   const criarMapa = useCriarMapaMental()
   const deleteMapa = useDeleteMapaMental()
+  const salvarPosicoes = useSalvarPosicoes()
+
+  function handleMoveNode(posicoes: NodePositions) {
+    if (!mapa) return
+    salvarPosicoes.mutate({ mapaId: mapa.id, posicoes })
+  }
 
   function handleRegenerar() {
     if (!mapa) return
@@ -61,7 +72,13 @@ export default function MapaViewPage() {
 
       {isLoading && <LoadingState />}
       {!isLoading && !mapa && <EmptyState message="Mapa não encontrado." />}
-      {mapa && <MindMapCanvas root={mapa.conteudo as unknown as MindMapNode} />}
+      {mapa && (
+        <MindMapCanvas
+          root={mapa.conteudo as unknown as MindMapNode}
+          posicoes={mapa.posicoes as unknown as NodePositions}
+          onMoveNode={handleMoveNode}
+        />
+      )}
     </div>
   )
 }

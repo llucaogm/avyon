@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/shared/lib/supabaseClient'
 import { useAuth } from '@/shared/context/AuthProvider'
+import type { NodePositions } from '@/modules/estudos/lib/mindMapLayout'
 import type { Tables } from '@/shared/types/database.types'
 
 interface CriarMapaMentalInput {
@@ -60,6 +61,23 @@ export function useCriarMapaMental() {
     onSuccess: (mapa) => {
       queryClient.invalidateQueries({ queryKey: ['mapasMentais', user?.id] })
       queryClient.invalidateQueries({ queryKey: ['mapaMental', mapa.id] })
+    },
+  })
+}
+
+/** Persists dragged node positions. Pure DB write, no AI involved — RLS lets
+ * the user update their own row directly, no need to go through the Edge Function. */
+export function useSalvarPosicoes() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ mapaId, posicoes }: { mapaId: string; posicoes: NodePositions }) => {
+      const { error } = await supabase.from('mapas_mentais').update({ posicoes }).eq('id', mapaId)
+      if (error) throw error
+    },
+    meta: { action: 'mapaMental.salvarPosicoes' },
+    onSuccess: (_data, { mapaId }) => {
+      queryClient.invalidateQueries({ queryKey: ['mapaMental', mapaId] })
     },
   })
 }

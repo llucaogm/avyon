@@ -130,7 +130,7 @@ Deno.serve(async (req) => {
     if (mapaId) {
       const { data: mapa, error: updateError } = await supabase
         .from('mapas_mentais')
-        .update({ conteudo, nota_ids: notaIds, updated_at: new Date().toISOString() })
+        .update({ conteudo, nota_ids: notaIds, posicoes: {}, updated_at: new Date().toISOString() })
         .eq('id', mapaId)
         .select('*')
         .single()

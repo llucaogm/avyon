@@ -503,6 +503,7 @@ export type Database = {
           created_at: string
           id: string
           nota_ids: string[]
+          posicoes: Json
           titulo: string
           updated_at: string
           user_id: string
@@ -512,6 +513,7 @@ export type Database = {
           created_at?: string
           id?: string
           nota_ids?: string[]
+          posicoes?: Json
           titulo: string
           updated_at?: string
           user_id: string
@@ -521,6 +523,7 @@ export type Database = {
           created_at?: string
           id?: string
           nota_ids?: string[]
+          posicoes?: Json
           titulo?: string
           updated_at?: string
           user_id?: string
