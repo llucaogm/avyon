@@ -11,6 +11,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: false,
       includeAssets: ['icons/apple-touch-icon.png'],
       manifest: {
         name: 'Avyon',
