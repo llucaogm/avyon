@@ -24,10 +24,10 @@ function distance(a: { x: number; y: number }, b: { x: number; y: number }) {
 }
 
 function nodeSize(depth: number) {
-  if (depth === 0) return { w: 180, h: 56 }
-  if (depth === 1) return { w: 150, h: 46 }
-  if (depth === 2) return { w: 128, h: 38 }
-  return { w: 112, h: 32 }
+  if (depth === 0) return { w: 210, h: 68 }
+  if (depth === 1) return { w: 175, h: 58 }
+  if (depth === 2) return { w: 155, h: 54 }
+  return { w: 145, h: 54 }
 }
 
 export function MindMapCanvas({ root }: { root: MindMapNode }) {
@@ -142,12 +142,12 @@ export function MindMapCanvas({ root }: { root: MindMapNode }) {
               <foreignObject key={node.id} x={node.x - w / 2} y={node.y - h / 2} width={w} height={h}>
                 <div
                   className={cn(
-                    'flex h-full w-full items-center justify-center rounded-full px-3 text-center text-xs leading-tight',
+                    'flex h-full w-full items-center justify-center overflow-hidden rounded-2xl px-2.5 py-1 text-center leading-tight break-words',
                     node.depth === 0 &&
-                      'bg-gradient-brand font-display text-sm font-semibold text-primary-foreground',
-                    node.depth === 1 && 'border font-medium text-foreground',
-                    node.depth === 2 && 'border bg-card text-foreground',
-                    node.depth >= 3 && 'text-[11px] text-muted-foreground',
+                      'bg-gradient-brand font-display line-clamp-2 text-sm font-semibold text-primary-foreground',
+                    node.depth === 1 && 'line-clamp-2 border text-xs font-medium text-foreground',
+                    node.depth === 2 && 'line-clamp-2 border bg-card text-xs text-foreground',
+                    node.depth >= 3 && 'line-clamp-3 text-[11px] text-muted-foreground',
                   )}
                   style={
                     node.depth === 1

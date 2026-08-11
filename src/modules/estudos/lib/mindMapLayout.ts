@@ -19,7 +19,7 @@ export interface MindMapEdge {
 }
 
 /** Distance from a node to its children, indexed by the parent's depth (root = 0). */
-const RADIUS_STEPS = [170, 130, 100]
+const RADIUS_STEPS = [210, 170, 140]
 
 /**
  * Radial dendrogram layout: the root sits at the origin, each node's children
