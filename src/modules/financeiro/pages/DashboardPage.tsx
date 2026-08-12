@@ -22,6 +22,7 @@ import { CashFlowCard } from '@/modules/financeiro/components/dashboard/CashFlow
 import { FixedVsFlexibleMatrix } from '@/modules/financeiro/components/dashboard/FixedVsFlexibleMatrix'
 import { UpcomingDueList } from '@/modules/financeiro/components/dashboard/UpcomingDueList'
 import { RecentTransactionsList } from '@/modules/financeiro/components/dashboard/RecentTransactionsList'
+import { Reveal } from '@/shared/components/common/Reveal'
 import { useMonth } from '@/modules/financeiro/context/MonthProvider'
 import { useMonthlyBudget } from '@/modules/financeiro/hooks/useMonthlyBudget'
 import { useFinancialHealth } from '@/modules/financeiro/hooks/useFinancialHealth'
@@ -100,25 +101,29 @@ export default function DashboardPage() {
         />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Gastos de hoje</CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-xs text-muted-foreground">Saídas</p>
-            <p className="text-sm font-semibold text-destructive">{formatCurrency(saidasHoje)}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Entradas</p>
-            <p className="text-sm font-semibold text-primary">{formatCurrency(entradasHoje)}</p>
-          </div>
-        </CardContent>
-      </Card>
+      <Reveal>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Gastos de hoje</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs text-muted-foreground">Saídas</p>
+              <p className="text-sm font-semibold text-destructive">{formatCurrency(saidasHoje)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Entradas</p>
+              <p className="text-sm font-semibold text-primary">{formatCurrency(entradasHoje)}</p>
+            </div>
+          </CardContent>
+        </Card>
+      </Reveal>
 
-      <SpendingPaceThermometer />
+      <Reveal delay={60}>
+        <SpendingPaceThermometer />
+      </Reveal>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <Reveal delay={120} className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <RunwayCard saldoAtual={saldoAtual} />
         <CashFlowCard
           comprometido={health.custosFixos}
@@ -126,32 +131,38 @@ export default function DashboardPage() {
           livre={health.restanteFlexivel}
         />
         <FixedVsFlexibleMatrix percentualComprometido={health.percentualComprometido} />
-      </div>
+      </Reveal>
 
       {cartoes.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Cartões</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-2">
-            {cartoes.map((c) => (
-              <div key={c.id} className="flex items-center justify-between text-sm">
-                <span className="flex items-center gap-2">
-                  <span className="size-2 rounded-full" style={{ backgroundColor: c.cor }} />
-                  {c.nome}
-                  <span className="text-xs text-muted-foreground">
-                    {c.tipo === 'credito' ? '· disponível' : '· débito'}
+        <Reveal delay={60}>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Cartões</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-2">
+              {cartoes.map((c) => (
+                <div key={c.id} className="flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-2">
+                    <span className="size-2 rounded-full" style={{ backgroundColor: c.cor }} />
+                    {c.nome}
+                    <span className="text-xs text-muted-foreground">
+                      {c.tipo === 'credito' ? '· disponível' : '· débito'}
+                    </span>
                   </span>
-                </span>
-                <span className="font-medium">{formatCurrency(computeCartaoSaldo(c, cartaoTransacoes))}</span>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+                  <span className="font-medium">{formatCurrency(computeCartaoSaldo(c, cartaoTransacoes))}</span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </Reveal>
       )}
 
-      <UpcomingDueList />
-      <RecentTransactionsList />
+      <Reveal delay={100}>
+        <UpcomingDueList />
+      </Reveal>
+      <Reveal delay={140}>
+        <RecentTransactionsList />
+      </Reveal>
 
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </div>

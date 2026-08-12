@@ -5,6 +5,7 @@ import { supabase } from '@/shared/lib/supabaseClient'
 import { useLogger } from '@/shared/hooks/useLogger'
 import { ModuleSwitcher } from '@/shared/components/layout/ModuleSwitcher'
 import { Button } from '@/shared/components/ui/button'
+import { AuroraBackground } from '@/shared/components/effects/AuroraBackground'
 import avyonLogo from '@/assets/avyon-logo.png'
 
 export function HubShell() {
@@ -19,9 +20,11 @@ export function HubShell() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="relative flex min-h-screen flex-col">
+      <AuroraBackground />
+
       <header
-        className="flex items-center justify-between border-b px-4 py-2.5"
+        className="relative z-10 flex items-center justify-between border-b bg-background/70 px-4 py-2.5 backdrop-blur-sm"
         style={{ paddingTop: 'max(0.625rem, env(safe-area-inset-top))' }}
       >
         <Link to="/" className="press-feedback flex items-center gap-2">
@@ -41,7 +44,7 @@ export function HubShell() {
         </Button>
       </header>
 
-      <div className="flex-1">
+      <div className="relative z-10 flex-1">
         <Outlet />
       </div>
     </div>

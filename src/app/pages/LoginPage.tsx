@@ -16,6 +16,7 @@ import {
   CardDescription,
   CardHeader,
 } from '@/shared/components/ui/card'
+import { AuroraBackground } from '@/shared/components/effects/AuroraBackground'
 import avyonLogo from '@/assets/avyon-logo.png'
 
 const schema = z.object({
@@ -64,8 +65,9 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
-      <Card className="animate-fade-in-up w-full max-w-sm">
+    <div className="relative flex min-h-screen items-center justify-center p-4">
+      <AuroraBackground />
+      <Card className="animate-fade-in-up relative z-10 w-full max-w-sm border-white/10 shadow-2xl shadow-black/40 backdrop-blur-sm">
         <CardHeader className="items-center text-center">
           <img src={avyonLogo} alt="Avyon" className="animate-pop-in mx-auto mb-2 h-12 w-auto" />
           <CardDescription>

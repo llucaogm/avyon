@@ -281,6 +281,64 @@
   }
 }
 
+/* ---- Ambient background (AuroraBackground) — pure gradients, transform-only
+   animation, no filter:blur, so it's cheap to keep running behind every page. */
+
+@keyframes aurora-drift {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-3%, 2%, 0) scale(1.06); }
+  100% { transform: translate3d(2%, -3%, 0) scale(1); }
+}
+
+.aurora-layer {
+  position: absolute;
+  inset: -15%;
+  background:
+    radial-gradient(40% 40% at 18% 22%, color-mix(in oklab, var(--brand-teal) 24%, transparent) 0%, transparent 70%),
+    radial-gradient(45% 45% at 82% 78%, color-mix(in oklab, var(--brand-blue) 20%, transparent) 0%, transparent 70%),
+    radial-gradient(30% 30% at 60% 10%, color-mix(in oklab, var(--brand-teal) 12%, transparent) 0%, transparent 70%);
+  animation: aurora-drift 55s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.aurora-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---- Primary buttons — sheen sweep + brand glow, same language as .bank-card. */
+
+[data-slot="button"][data-variant="default"] {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+[data-slot="button"][data-variant="default"]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 35%,
+    color-mix(in oklab, white 35%, transparent) 48%,
+    transparent 60%
+  );
+  transform: translateX(-120%);
+  transition: transform 0.6s ease;
+  pointer-events: none;
+}
+@media (hover: hover) {
+  [data-slot="button"][data-variant="default"]:hover {
+    box-shadow: 0 6px 20px -6px color-mix(in oklab, var(--brand-teal) 55%, transparent);
+  }
+  [data-slot="button"][data-variant="default"]:hover::after {
+    transform: translateX(120%);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
