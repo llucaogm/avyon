@@ -257,17 +257,7 @@ export function QuickAddSheet({ open, onOpenChange, transaction }: QuickAddSheet
           </FormField>
 
           <FormField label="Descrição" htmlFor="descricao" error={errors.descricao?.message}>
-            <Input
-              id="descricao"
-              list="descricao-sugestoes"
-              placeholder="Ex: Mercado, Uber, Salário..."
-              {...register('descricao')}
-            />
-            <datalist id="descricao-sugestoes">
-              {[...new Set(recentTransactions.map((t) => t.descricao))].slice(0, 20).map((d) => (
-                <option key={d} value={d} />
-              ))}
-            </datalist>
+            <Input id="descricao" placeholder="Ex: Mercado, Uber, Salário..." {...register('descricao')} />
           </FormField>
 
           <FormField label="Categoria" htmlFor="categoriaId" error={errors.categoriaId?.message}>
@@ -315,6 +305,7 @@ export function QuickAddSheet({ open, onOpenChange, transaction }: QuickAddSheet
                           style={{ backgroundColor: c.cor }}
                         />
                         {c.nome}
+                        <span className="text-muted-foreground"> · {c.tipo === 'credito' ? 'Crédito' : 'Débito'}</span>
                       </SelectItem>
                     ))}
                   </SelectContent>
