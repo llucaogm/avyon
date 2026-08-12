@@ -26,8 +26,10 @@ import { useMonth } from '@/modules/financeiro/context/MonthProvider'
 import { useMonthlyBudget } from '@/modules/financeiro/hooks/useMonthlyBudget'
 import { useFinancialHealth } from '@/modules/financeiro/hooks/useFinancialHealth'
 import { useIncomeCategories } from '@/modules/financeiro/hooks/useCategories'
-import { useMonthTransactions, useTransactionsSince } from '@/modules/financeiro/hooks/useTransactions'
+import { useMonthTransactions } from '@/modules/financeiro/hooks/useTransactions'
 import { useAppSettings, useUpdateAppSettings } from '@/modules/financeiro/hooks/useAppSettings'
+import { useCartoes, useCartaoTransacoes, useSaldoGlobal } from '@/modules/financeiro/hooks/useCartoes'
+import { computeCartaoSaldo } from '@/modules/financeiro/lib/cartaoSaldo'
 import { formatCurrency } from '@/shared/lib/formatters'
 import { todayIso } from '@/modules/financeiro/lib/monthUtils'
 import { getErrorMessage } from '@/shared/lib/errors'
@@ -38,21 +40,14 @@ export default function DashboardPage() {
   const { data: incomeCategories = [] } = useIncomeCategories()
   const { data: settings } = useAppSettings()
   const { data: currentMonthTransactions = [] } = useMonthTransactions(new Date())
-  const { data: txSinceReconciliation = [] } = useTransactionsSince(settings?.saldo_atual_em)
+  const { saldo: saldoAtual } = useSaldoGlobal()
+  const { data: cartoes = [] } = useCartoes()
+  const { data: cartaoTransacoes = [] } = useCartaoTransacoes()
   const [settingsOpen, setSettingsOpen] = useState(false)
 
   const rendaLiquida =
     settings?.renda_liquida_override ??
     incomeCategories.reduce((sum, c) => sum + c.valor_mensal, 0)
-
-  const saldoAtual = useMemo(() => {
-    const base = settings?.saldo_atual_conta ?? 0
-    const delta = txSinceReconciliation.reduce(
-      (sum, t) => sum + t.valor_entrada - t.valor_saida,
-      0,
-    )
-    return base + delta
-  }, [settings?.saldo_atual_conta, txSinceReconciliation])
 
   const health = useFinancialHealth(selectedMonth)
 
@@ -132,6 +127,28 @@ export default function DashboardPage() {
         />
         <FixedVsFlexibleMatrix percentualComprometido={health.percentualComprometido} />
       </div>
+
+      {cartoes.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Cartões</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2">
+            {cartoes.map((c) => (
+              <div key={c.id} className="flex items-center justify-between text-sm">
+                <span className="flex items-center gap-2">
+                  <span className="size-2 rounded-full" style={{ backgroundColor: c.cor }} />
+                  {c.nome}
+                  <span className="text-xs text-muted-foreground">
+                    {c.tipo === 'credito' ? '· disponível' : '· débito'}
+                  </span>
+                </span>
+                <span className="font-medium">{formatCurrency(computeCartaoSaldo(c, cartaoTransacoes))}</span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       <UpcomingDueList />
       <RecentTransactionsList />

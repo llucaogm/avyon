@@ -68,6 +68,48 @@ export type Database = {
         }
         Relationships: []
       }
+      cartoes: {
+        Row: {
+          cor: string
+          created_at: string
+          id: string
+          is_active: boolean
+          limite: number | null
+          nome: string
+          saldo_reconciliado: number
+          saldo_reconciliado_em: string
+          tipo: Database["public"]["Enums"]["cartao_tipo"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cor: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          limite?: number | null
+          nome: string
+          saldo_reconciliado?: number
+          saldo_reconciliado_em?: string
+          tipo: Database["public"]["Enums"]["cartao_tipo"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cor?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          limite?: number | null
+          nome?: string
+          saldo_reconciliado?: number
+          saldo_reconciliado_em?: string
+          tipo?: Database["public"]["Enums"]["cartao_tipo"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       categorias: {
         Row: {
           cor: string
@@ -671,6 +713,7 @@ export type Database = {
       }
       transactions: {
         Row: {
+          cartao_id: string | null
           categoria_id: string | null
           created_at: string
           data: string
@@ -686,6 +729,7 @@ export type Database = {
           valor_saida: number
         }
         Insert: {
+          cartao_id?: string | null
           categoria_id?: string | null
           created_at?: string
           data?: string
@@ -701,6 +745,7 @@ export type Database = {
           valor_saida?: number
         }
         Update: {
+          cartao_id?: string | null
           categoria_id?: string | null
           created_at?: string
           data?: string
@@ -716,6 +761,13 @@ export type Database = {
           valor_saida?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "transactions_cartao_id_fkey"
+            columns: ["cartao_id"]
+            isOneToOne: false
+            referencedRelation: "cartoes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "transactions_categoria_id_fkey"
             columns: ["categoria_id"]
@@ -747,6 +799,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      cartao_tipo: "debito" | "credito"
       categoria_tipo: "despesa" | "receita"
       category_group: "fixo" | "variavel" | "objetivo" | "reserva"
       expense_frequency: "mensal" | "anual" | "semestral" | "unico"
@@ -889,6 +942,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      cartao_tipo: ["debito", "credito"],
       categoria_tipo: ["despesa", "receita"],
       category_group: ["fixo", "variavel", "objetivo", "reserva"],
       expense_frequency: ["mensal", "anual", "semestral", "unico"],

@@ -11,6 +11,7 @@ import { useMonth } from '@/modules/financeiro/context/MonthProvider'
 import { useMonthTransactions, useDeleteTransaction } from '@/modules/financeiro/hooks/useTransactions'
 import { useExpenseCategories, useIncomeCategories } from '@/modules/financeiro/hooks/useCategories'
 import { useCategorias } from '@/modules/financeiro/hooks/useCategorias'
+import { useCartoes } from '@/modules/financeiro/hooks/useCartoes'
 import { formatCurrency, formatDate } from '@/shared/lib/formatters'
 import { LoadingState } from '@/shared/components/common/LoadingState'
 import { EmptyState } from '@/shared/components/common/EmptyState'
@@ -23,6 +24,8 @@ export default function TransactionsPage() {
   const { data: incomeCategories = [] } = useIncomeCategories()
   const { data: categoriasDespesa = [] } = useCategorias('despesa')
   const { data: categoriasReceita = [] } = useCategorias('receita')
+  const { data: cartoesDebito = [] } = useCartoes('debito')
+  const { data: cartoesCredito = [] } = useCartoes('credito')
   const deleteTransaction = useDeleteTransaction()
   const [editingTransaction, setEditingTransaction] = useState<Tables<'transactions'> | null>(null)
   const [importOpen, setImportOpen] = useState(false)
@@ -39,6 +42,12 @@ export default function TransactionsPage() {
     for (const c of [...categoriasDespesa, ...categoriasReceita]) map.set(c.id, { nome: c.nome, cor: c.cor })
     return map
   }, [categoriasDespesa, categoriasReceita])
+
+  const cartaoById = useMemo(() => {
+    const map = new Map<string, { nome: string; cor: string }>()
+    for (const c of [...cartoesDebito, ...cartoesCredito]) map.set(c.id, { nome: c.nome, cor: c.cor })
+    return map
+  }, [cartoesDebito, cartoesCredito])
 
   const totals = useMemo(() => {
     const entradas = transactions.reduce((sum, t) => sum + t.valor_entrada, 0)
@@ -112,6 +121,7 @@ export default function TransactionsPage() {
                     ? categoryNameById.get(t.income_category_id)
                     : null
                 const categoria = t.categoria_id ? categoriaById.get(t.categoria_id) : null
+                const cartao = t.cartao_id ? cartaoById.get(t.cartao_id) : null
                 return (
                   <div
                     key={t.id}
@@ -132,6 +142,12 @@ export default function TransactionsPage() {
                             <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5">
                               <span className="size-1.5 rounded-full" style={{ backgroundColor: categoria.cor }} />
                               {categoria.nome}
+                            </span>
+                          )}
+                          {cartao && (
+                            <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5">
+                              <span className="size-1.5 rounded-full" style={{ backgroundColor: cartao.cor }} />
+                              {cartao.nome}
                             </span>
                           )}
                         </p>

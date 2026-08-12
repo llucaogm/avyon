@@ -20,6 +20,7 @@ import {
 } from '@/shared/components/ui/select'
 import { useExpenseCategories, useIncomeCategories } from '@/modules/financeiro/hooks/useCategories'
 import { useCategorias } from '@/modules/financeiro/hooks/useCategorias'
+import { useCartoes } from '@/modules/financeiro/hooks/useCartoes'
 import {
   useCreateTransaction,
   useUpdateTransaction,
@@ -34,6 +35,11 @@ import type { Tables } from '@/shared/types/database.types'
 
 const paymentMethods = ['Débito', 'Crédito', 'Pix', 'Dinheiro', 'Outro']
 
+// Lido dentro do superRefine via ref (não pelo valor do form) — se existir ao
+// menos 1 cartão de débito cadastrado, toda receita nova passa a exigir cartão,
+// pra ficar rastreável. Sem cartões de débito ainda, o campo continua opcional.
+const requireCartaoEmEntradaRef = { current: false }
+
 const schema = z
   .object({
     tipo: z.enum(['entrada', 'saida']),
@@ -41,12 +47,20 @@ const schema = z
     descricao: z.string().min(1, 'Descreva o lançamento'),
     categoryId: z.string().optional(),
     categoriaId: z.string().optional(),
+    cartaoId: z.string().optional(),
     data: z.string().min(1),
     formaPagamento: z.string().optional(),
   })
   .superRefine((values, ctx) => {
     if (!values.categoriaId) {
       ctx.addIssue({ path: ['categoriaId'], code: z.ZodIssueCode.custom, message: 'Selecione uma categoria' })
+    }
+    if (requireCartaoEmEntradaRef.current && values.tipo === 'entrada' && !values.cartaoId) {
+      ctx.addIssue({
+        path: ['cartaoId'],
+        code: z.ZodIssueCode.custom,
+        message: 'Selecione onde esse dinheiro está entrando',
+      })
     }
   })
 
@@ -67,6 +81,7 @@ function defaultValuesFor(transaction: Tables<'transactions'> | undefined): Form
       descricao: '',
       categoryId: undefined,
       categoriaId: undefined,
+      cartaoId: undefined,
       data: todayIso(),
       formaPagamento: undefined,
     }
@@ -78,6 +93,7 @@ function defaultValuesFor(transaction: Tables<'transactions'> | undefined): Form
     descricao: transaction.descricao,
     categoryId: transaction.expense_category_id ?? transaction.income_category_id ?? undefined,
     categoriaId: transaction.categoria_id ?? undefined,
+    cartaoId: transaction.cartao_id ?? undefined,
     data: transaction.data,
     formaPagamento: transaction.forma_pagamento ?? undefined,
   }
@@ -89,6 +105,8 @@ export function QuickAddSheet({ open, onOpenChange, transaction }: QuickAddSheet
   const { data: incomeCategories = [] } = useIncomeCategories()
   const { data: categoriasDespesa = [] } = useCategorias('despesa')
   const { data: categoriasReceita = [] } = useCategorias('receita')
+  const { data: cartoesDebito = [] } = useCartoes('debito')
+  const { data: cartoesCredito = [] } = useCartoes('credito')
   const { data: recentTransactions = [] } = useRecentTransactions()
   const createTransaction = useCreateTransaction()
   const updateTransaction = useUpdateTransaction()
@@ -115,6 +133,10 @@ export function QuickAddSheet({ open, onOpenChange, transaction }: QuickAddSheet
   const fixoOptions = tipo === 'saida' ? expenseCategories : incomeCategories
   const categoriaOptions = tipo === 'saida' ? categoriasDespesa : categoriasReceita
   const fixoField = tipo === 'saida' ? 'expense_category_id' : 'income_category_id'
+  // Crédito só entra como opção em saídas — ele nunca recebe lançamento manual
+  // de entrada, só via "Pagar fatura" em Cartões.
+  const cartaoOptions = tipo === 'saida' ? [...cartoesDebito, ...cartoesCredito] : cartoesDebito
+  requireCartaoEmEntradaRef.current = cartoesDebito.length > 0
 
   const fixoSuggestion = useMemo(() => {
     return suggestCategory(descricao, recentTransactions, fixoField)
@@ -171,6 +193,7 @@ export function QuickAddSheet({ open, onOpenChange, transaction }: QuickAddSheet
         expense_category_id: values.tipo === 'saida' ? values.categoryId ?? null : null,
         income_category_id: values.tipo === 'entrada' ? values.categoryId ?? null : null,
         categoria_id: values.categoriaId ?? null,
+        cartao_id: values.cartaoId ?? null,
         forma_pagamento: values.formaPagamento ?? null,
       }
       if (isEditing) {
@@ -205,6 +228,7 @@ export function QuickAddSheet({ open, onOpenChange, transaction }: QuickAddSheet
                     field.onChange(v)
                     setValue('categoryId', undefined)
                     setValue('categoriaId', undefined)
+                    setValue('cartaoId', undefined)
                     setAutoSuggestedFixo(false)
                     setAutoSuggestedCategoria(false)
                   }
@@ -272,6 +296,31 @@ export function QuickAddSheet({ open, onOpenChange, transaction }: QuickAddSheet
             {categoriaSuggestion && !isEditing && (
               <p className="text-xs text-muted-foreground">Categoria sugerida com base no histórico</p>
             )}
+          </FormField>
+
+          <FormField label="Cartão" htmlFor="cartaoId" error={errors.cartaoId?.message}>
+            <Controller
+              control={control}
+              name="cartaoId"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="cartaoId" className="w-full">
+                    <SelectValue placeholder="Nenhum" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cartaoOptions.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        <span
+                          className="mr-1 inline-block size-2.5 rounded-full"
+                          style={{ backgroundColor: c.cor }}
+                        />
+                        {c.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </FormField>
 
           <FormField

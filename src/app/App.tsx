@@ -14,6 +14,7 @@ import TransactionsPage from '@/modules/financeiro/pages/TransactionsPage'
 import BudgetPage from '@/modules/financeiro/pages/BudgetPage'
 import FixedExpensesPage from '@/modules/financeiro/pages/FixedExpensesPage'
 import CategoriesPage from '@/modules/financeiro/pages/CategoriesPage'
+import CartoesPage from '@/modules/financeiro/pages/CartoesPage'
 import EmergencyFundPage from '@/modules/financeiro/pages/EmergencyFundPage'
 import GoalsPage from '@/modules/financeiro/pages/GoalsPage'
 import ForecastPage from '@/modules/financeiro/pages/ForecastPage'
@@ -50,6 +51,7 @@ function App() {
                   <Route path="emergency-fund" element={<EmergencyFundPage />} />
                   <Route path="gastos-fixos" element={<FixedExpensesPage />} />
                   <Route path="categorias" element={<CategoriesPage />} />
+                  <Route path="cartoes" element={<CartoesPage />} />
                   <Route path="como-usar" element={<HowToUsePage />} />
                 </Route>
 

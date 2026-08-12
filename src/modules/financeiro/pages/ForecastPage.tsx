@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { FormField } from '@/shared/components/common/FormField'
 import { useExpenseCategories, useIncomeCategories } from '@/modules/financeiro/hooks/useCategories'
 import { useAppSettings } from '@/modules/financeiro/hooks/useAppSettings'
-import { useMonthTransactions, useTransactionsSince } from '@/modules/financeiro/hooks/useTransactions'
+import { useMonthTransactions } from '@/modules/financeiro/hooks/useTransactions'
+import { useSaldoGlobal } from '@/modules/financeiro/hooks/useCartoes'
 import { computeForecast } from '@/modules/financeiro/lib/forecast'
 import { formatCurrency, formatMonthLabel } from '@/shared/lib/formatters'
 import { LoadingState } from '@/shared/components/common/LoadingState'
@@ -17,13 +18,7 @@ export default function ForecastPage() {
   const { data: incomeCategories = [], isLoading: loadingIncome } = useIncomeCategories()
   const { data: settings, isLoading: loadingSettings } = useAppSettings()
   const { data: currentMonthTransactions = [], isLoading: loadingCurrentMonth } = useMonthTransactions(new Date())
-  const { data: txSinceReconciliation = [], isLoading: loadingSince } = useTransactionsSince(settings?.saldo_atual_em)
-
-  const saldoAtual = useMemo(() => {
-    const base = settings?.saldo_atual_conta ?? 0
-    const delta = txSinceReconciliation.reduce((sum, t) => sum + t.valor_entrada - t.valor_saida, 0)
-    return base + delta
-  }, [settings?.saldo_atual_conta, txSinceReconciliation])
+  const { saldo: saldoAtual, isLoading: loadingSaldo } = useSaldoGlobal()
 
   const currentMonthActual = useMemo(
     () => ({
@@ -95,7 +90,7 @@ export default function ForecastPage() {
     'Com a compra': forecastComCompra[i]?.saldoAcumulado ?? m.saldoAcumulado,
   }))
 
-  const isLoading = loadingExpense || loadingIncome || loadingSettings || loadingCurrentMonth || loadingSince
+  const isLoading = loadingExpense || loadingIncome || loadingSettings || loadingCurrentMonth || loadingSaldo
 
   return (
     <div className="flex flex-col gap-4">
