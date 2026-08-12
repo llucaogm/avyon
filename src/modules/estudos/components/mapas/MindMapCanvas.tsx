@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { PointerEvent as ReactPointerEvent, WheelEvent as ReactWheelEvent } from 'react'
 import { Plus, Minus, LocateFixed } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
-import { layoutRadialTree, type MindMapNode, type NodePositions } from '@/modules/estudos/lib/mindMapLayout'
+import { layoutRadialTree, nodeSize, type MindMapNode, type NodePositions } from '@/modules/estudos/lib/mindMapLayout'
 import { STUDY_COLORS, studyColorVar } from '@/modules/estudos/lib/studyColors'
 import { cn } from '@/shared/lib/utils'
 
@@ -21,12 +21,6 @@ function clamp(v: number, min: number, max: number) {
 
 function distance(a: { x: number; y: number }, b: { x: number; y: number }) {
   return Math.hypot(a.x - b.x, a.y - b.y)
-}
-
-function nodeSize(depth: number) {
-  if (depth === 0) return { w: 210, h: 68 }
-  if (depth === 1) return { w: 180, h: 60 }
-  return { w: 230, h: 108 }
 }
 
 interface MindMapCanvasProps {

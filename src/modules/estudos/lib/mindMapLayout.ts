@@ -29,6 +29,14 @@ export interface MindMapEdge {
 /** Distance from a node to its children, indexed by the parent's depth (root = 0). */
 const RADIUS_STEPS = [240, 210]
 
+/** Box size per depth — shared by MindMapCanvas (on-screen) and mindMapExport
+ * (PNG download) so the two never quietly drift apart. */
+export function nodeSize(depth: number): { w: number; h: number } {
+  if (depth === 0) return { w: 210, h: 68 }
+  if (depth === 1) return { w: 180, h: 60 }
+  return { w: 230, h: 108 }
+}
+
 /** A node is terminal for layout purposes once its own children are all leaves —
  * they stop being placed as separate nodes and become inline bullet text instead. */
 function isTerminal(node: MindMapNode): boolean {
