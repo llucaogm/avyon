@@ -16,9 +16,10 @@ import { FormField } from '@/shared/components/common/FormField'
 import { SubmitButton } from '@/shared/components/common/SubmitButton'
 import { CATEGORIA_COLORS } from '@/modules/financeiro/lib/categoriaColors'
 import { BANCO_PRESETS } from '@/modules/financeiro/lib/bancoPresets'
-import { useCreateCartao, useUpdateCartao } from '@/modules/financeiro/hooks/useCartoes'
+import { useCreateCartao, useUpdateCartao, useSaldoGlobal } from '@/modules/financeiro/hooks/useCartoes'
 import { CartaoVisual } from '@/modules/financeiro/components/cartoes/CartaoVisual'
 import { getErrorMessage } from '@/shared/lib/errors'
+import { formatCurrency } from '@/shared/lib/formatters'
 import { cn } from '@/shared/lib/utils'
 import type { Enums, Tables } from '@/shared/types/database.types'
 
@@ -52,7 +53,12 @@ function defaultValuesFor(cartao: Tables<'cartoes'> | undefined, tipo: CartaoTip
 export function CartaoFormDialog({ open, onOpenChange, cartao, tipo }: CartaoFormDialogProps) {
   const createCartao = useCreateCartao()
   const updateCartao = useUpdateCartao()
+  const { saldo: saldoLegado, usaCartoes } = useSaldoGlobal()
   const isEditing = !!cartao
+  // Só faz sentido oferecer "usar saldo atual" antes do primeiro cartão de
+  // débito existir — depois disso o saldo global já vem da soma dos cartões,
+  // e reaplicar esse número num segundo cartão duplicaria o valor.
+  const podeMigrarSaldo = !isEditing && tipo === 'debito' && !usaCartoes
 
   const {
     register,
@@ -176,6 +182,15 @@ export function CartaoFormDialog({ open, onOpenChange, cartao, tipo }: CartaoFor
               <p className="text-xs text-muted-foreground">
                 Ajustar aqui reconcilia o saldo a partir de agora, igual à configuração global.
               </p>
+            )}
+            {podeMigrarSaldo && saldoLegado !== 0 && (
+              <button
+                type="button"
+                onClick={() => setValue('valor', saldoLegado)}
+                className="press-feedback self-start text-xs font-medium text-primary underline-offset-2 hover:underline"
+              >
+                Usar saldo atual ({formatCurrency(saldoLegado)})
+              </button>
             )}
           </FormField>
 
