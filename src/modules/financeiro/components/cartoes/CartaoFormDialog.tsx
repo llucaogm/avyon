@@ -3,7 +3,7 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Check } from 'lucide-react'
+import { Check, Plus } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -15,7 +15,9 @@ import { Input } from '@/shared/components/ui/input'
 import { FormField } from '@/shared/components/common/FormField'
 import { SubmitButton } from '@/shared/components/common/SubmitButton'
 import { CATEGORIA_COLORS } from '@/modules/financeiro/lib/categoriaColors'
+import { BANCO_PRESETS } from '@/modules/financeiro/lib/bancoPresets'
 import { useCreateCartao, useUpdateCartao } from '@/modules/financeiro/hooks/useCartoes'
+import { CartaoVisual } from '@/modules/financeiro/components/cartoes/CartaoVisual'
 import { getErrorMessage } from '@/shared/lib/errors'
 import { cn } from '@/shared/lib/utils'
 import type { Enums, Tables } from '@/shared/types/database.types'
@@ -56,12 +58,17 @@ export function CartaoFormDialog({ open, onOpenChange, cartao, tipo }: CartaoFor
     register,
     handleSubmit,
     control,
+    watch,
+    setValue,
     reset,
     formState: { errors },
   } = useForm<FormInput, unknown, FormOutput>({
     resolver: zodResolver(schema),
     defaultValues: defaultValuesFor(cartao, tipo),
   })
+
+  const nomePreview = watch('nome')
+  const corPreview = watch('cor')
 
   useEffect(() => {
     if (open) reset(defaultValuesFor(cartao, tipo))
@@ -110,6 +117,51 @@ export function CartaoFormDialog({ open, onOpenChange, cartao, tipo }: CartaoFor
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+          <div className="mx-auto w-full max-w-56">
+            <CartaoVisual
+              cartao={{
+                id: cartao?.id ?? 'preview',
+                nome: nomePreview || 'Meu cartão',
+                cor: corPreview || CATEGORIA_COLORS[0],
+                tipo,
+              }}
+            />
+          </div>
+
+          {!isEditing && (
+            <FormField label="Banco (opcional)" htmlFor="banco-presets">
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                {BANCO_PRESETS.map((banco) => (
+                  <button
+                    key={banco.id}
+                    type="button"
+                    onClick={() => {
+                      setValue('nome', banco.nome)
+                      setValue('cor', banco.cor)
+                    }}
+                    className={cn(
+                      'press-feedback rounded-2xl outline-offset-4 transition-shadow',
+                      nomePreview === banco.nome && corPreview === banco.cor && 'ring-2 ring-foreground',
+                    )}
+                  >
+                    <CartaoVisual cartao={{ id: banco.id, nome: banco.nome, cor: banco.cor, tipo }} />
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setValue('nome', '')
+                    setValue('cor', CATEGORIA_COLORS[0])
+                  }}
+                  className="press-feedback flex aspect-[85.6/54] flex-col items-center justify-center gap-1 rounded-2xl border border-dashed text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
+                >
+                  <Plus className="size-5" />
+                  <span className="text-[10px]">Personalizado</span>
+                </button>
+              </div>
+            </FormField>
+          )}
+
           <FormField label="Nome" htmlFor="nome" error={errors.nome?.message}>
             <Input id="nome" placeholder="Ex: Nubank, Inter, Itaú..." {...register('nome')} />
           </FormField>

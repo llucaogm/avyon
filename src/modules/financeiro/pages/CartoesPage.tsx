@@ -1,12 +1,12 @@
 import { useMemo, useState, type CSSProperties } from 'react'
 import { Plus, Pencil, Trash2, Receipt } from 'lucide-react'
 import { toast } from 'sonner'
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Button } from '@/shared/components/ui/button'
 import { useCartoes, useCartaoTransacoes, useDeleteCartao } from '@/modules/financeiro/hooks/useCartoes'
 import { computeCartaoSaldo } from '@/modules/financeiro/lib/cartaoSaldo'
 import { CartaoFormDialog } from '@/modules/financeiro/components/cartoes/CartaoFormDialog'
 import { PagarFaturaDialog } from '@/modules/financeiro/components/cartoes/PagarFaturaDialog'
+import { CartaoVisual } from '@/modules/financeiro/components/cartoes/CartaoVisual'
 import { LoadingState } from '@/shared/components/common/LoadingState'
 import { EmptyState } from '@/shared/components/common/EmptyState'
 import { formatCurrency } from '@/shared/lib/formatters'
@@ -44,7 +44,7 @@ export default function CartoesPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       <div>
         <h1 className="font-display text-2xl font-semibold">Cartões</h1>
         <p className="text-sm text-muted-foreground">
@@ -53,107 +53,110 @@ export default function CartoesPage() {
         </p>
       </div>
 
-      <Card className="animate-fade-in-up" style={{ '--stagger-index': 0 } as CSSProperties}>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">Débito</CardTitle>
+      <section className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-base font-semibold">Débito</h2>
           <Button size="sm" onClick={() => openNew('debito')}>
             <Plus className="size-4" />
             Novo
           </Button>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-2">
-          {loadingDebitos && <LoadingState />}
-          {!loadingDebitos && debitos.length === 0 && (
-            <EmptyState message="Nenhum cartão de débito ainda. Adicione o primeiro." />
-          )}
-          {debitos.map((c) => (
+        </div>
+
+        {loadingDebitos && <LoadingState />}
+        {!loadingDebitos && debitos.length === 0 && (
+          <EmptyState message="Nenhum cartão de débito ainda. Adicione o primeiro." />
+        )}
+
+        <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+          {debitos.map((c, index) => (
             <div
               key={c.id}
-              className="flex items-center justify-between rounded-md border p-3 transition-colors hover:bg-muted/40"
+              className="animate-fade-in-up flex flex-col gap-2"
+              style={{ '--stagger-index': index } as CSSProperties}
             >
-              <div className="flex items-center gap-2">
-                <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: c.cor }} />
+              <CartaoVisual cartao={c} />
+              <div className="flex items-center justify-between px-1">
                 <div>
-                  <p className="font-medium">{c.nome}</p>
                   <p className="text-xs text-muted-foreground">Saldo</p>
+                  <p className="text-sm font-semibold">{formatCurrency(saldosById.get(c.id) ?? 0)}</p>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold">{formatCurrency(saldosById.get(c.id) ?? 0)}</span>
-                <Button variant="ghost" size="icon" onClick={() => openEdit(c)}>
-                  <Pencil className="size-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() =>
-                    deleteCartao.mutate(c.id, { onError: () => toast.error('Não consegui excluir esse cartão') })
-                  }
-                >
-                  <Trash2 className="size-4" />
-                </Button>
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="icon" onClick={() => openEdit(c)}>
+                    <Pencil className="size-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() =>
+                      deleteCartao.mutate(c.id, { onError: () => toast.error('Não consegui excluir esse cartão') })
+                    }
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           ))}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
-      <Card className="animate-fade-in-up" style={{ '--stagger-index': 1 } as CSSProperties}>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">Crédito</CardTitle>
+      <section className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-base font-semibold">Crédito</h2>
           <Button size="sm" onClick={() => openNew('credito')}>
             <Plus className="size-4" />
             Novo
           </Button>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-2">
-          {loadingCreditos && <LoadingState />}
-          {!loadingCreditos && creditos.length === 0 && (
-            <EmptyState message="Nenhum cartão de crédito ainda. Adicione o primeiro." />
-          )}
-          {creditos.map((c) => (
+        </div>
+
+        {loadingCreditos && <LoadingState />}
+        {!loadingCreditos && creditos.length === 0 && (
+          <EmptyState message="Nenhum cartão de crédito ainda. Adicione o primeiro." />
+        )}
+
+        <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+          {creditos.map((c, index) => (
             <div
               key={c.id}
-              className="flex flex-col gap-2 rounded-md border p-3 transition-colors hover:bg-muted/40 sm:flex-row sm:items-center sm:justify-between"
+              className="animate-fade-in-up flex flex-col gap-2"
+              style={{ '--stagger-index': index } as CSSProperties}
             >
-              <div className="flex items-center gap-2">
-                <span className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: c.cor }} />
+              <CartaoVisual cartao={c} />
+              <div className="flex items-center justify-between px-1">
                 <div>
-                  <p className="font-medium">{c.nome}</p>
-                  <p className="text-xs text-muted-foreground">
-                    Disponível de {formatCurrency(c.limite ?? 0)}
-                  </p>
+                  <p className="text-xs text-muted-foreground">Disponível de {formatCurrency(c.limite ?? 0)}</p>
+                  <p className="text-sm font-semibold">{formatCurrency(saldosById.get(c.id) ?? 0)}</p>
+                </div>
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="icon" onClick={() => openEdit(c)}>
+                    <Pencil className="size-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() =>
+                      deleteCartao.mutate(c.id, { onError: () => toast.error('Não consegui excluir esse cartão') })
+                    }
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold">{formatCurrency(saldosById.get(c.id) ?? 0)}</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={debitos.length === 0}
-                  title={debitos.length === 0 ? 'Cadastre um cartão de débito primeiro' : undefined}
-                  onClick={() => setFaturaCartao(c)}
-                >
-                  <Receipt className="size-4" />
-                  Pagar fatura
-                </Button>
-                <Button variant="ghost" size="icon" onClick={() => openEdit(c)}>
-                  <Pencil className="size-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() =>
-                    deleteCartao.mutate(c.id, { onError: () => toast.error('Não consegui excluir esse cartão') })
-                  }
-                >
-                  <Trash2 className="size-4" />
-                </Button>
-              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                disabled={debitos.length === 0}
+                title={debitos.length === 0 ? 'Cadastre um cartão de débito primeiro' : undefined}
+                onClick={() => setFaturaCartao(c)}
+              >
+                <Receipt className="size-4" />
+                Pagar fatura
+              </Button>
             </div>
           ))}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
       <CartaoFormDialog open={formOpen} onOpenChange={setFormOpen} cartao={editing} tipo={formTipo} />
       {faturaCartao && (

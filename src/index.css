@@ -249,6 +249,38 @@
   }
 }
 
+/* Physical-card mockups (Cartões) — a diagonal glare that sweeps across on
+   hover, like light catching a plastic card. */
+.bank-card {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.bank-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 35%,
+    color-mix(in oklab, white 30%, transparent) 48%,
+    transparent 60%
+  );
+  transform: translateX(-120%);
+  transition: transform 0.7s ease;
+  pointer-events: none;
+}
+@media (hover: hover) {
+  .bank-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 32px -14px rgba(0, 0, 0, 0.55);
+  }
+  .bank-card:hover::after {
+    transform: translateX(120%);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
