@@ -20,6 +20,7 @@ import {
 } from '@/shared/components/ui/select'
 import { useCreateExpenseCategory, useUpdateExpenseCategory } from '@/modules/financeiro/hooks/useCategories'
 import { useCategorias } from '@/modules/financeiro/hooks/useCategorias'
+import { useCartoes } from '@/modules/financeiro/hooks/useCartoes'
 import { CATEGORY_GROUP_LABELS } from '@/modules/financeiro/lib/categoryGroups'
 import { getErrorMessage } from '@/shared/lib/errors'
 import { FormField } from '@/shared/components/common/FormField'
@@ -32,6 +33,7 @@ const schema = z.object({
   grupo: z.enum(['fixo', 'variavel', 'objetivo', 'reserva']),
   frequencia: z.enum(['mensal', 'anual', 'semestral', 'unico']),
   categoria_id: z.string().optional(),
+  cartao_id: z.string().optional(),
   due_month: z.string().optional(),
   charge_date: z.string().optional(),
   dia_vencimento: z.string().optional(),
@@ -75,6 +77,9 @@ export function ExpenseCategoryDialog({
   const createCategory = useCreateExpenseCategory()
   const updateCategory = useUpdateExpenseCategory()
   const { data: categorias = [] } = useCategorias('despesa')
+  const { data: cartoesDebito = [] } = useCartoes('debito')
+  const { data: cartoesCredito = [] } = useCartoes('credito')
+  const cartaoOptions = [...cartoesDebito, ...cartoesCredito]
   const isEditing = !!category
 
   const { register, handleSubmit, control, watch, reset, formState: { errors } } = useForm<
@@ -89,6 +94,7 @@ export function ExpenseCategoryDialog({
       grupo: defaultGroup ?? 'fixo',
       frequencia: 'mensal',
       categoria_id: undefined,
+      cartao_id: undefined,
       due_month: undefined,
       charge_date: undefined,
       dia_vencimento: undefined,
@@ -109,6 +115,7 @@ export function ExpenseCategoryDialog({
               grupo: category.grupo,
               frequencia: category.frequencia,
               categoria_id: category.categoria_id ?? undefined,
+              cartao_id: category.cartao_id ?? undefined,
               due_month: category.due_month ? String(category.due_month) : undefined,
               charge_date: category.charge_date ?? undefined,
               dia_vencimento: category.dia_vencimento ? String(category.dia_vencimento) : undefined,
@@ -121,6 +128,7 @@ export function ExpenseCategoryDialog({
               grupo: defaultGroup ?? 'fixo',
               frequencia: 'mensal',
               categoria_id: undefined,
+              cartao_id: undefined,
               due_month: undefined,
               charge_date: undefined,
               dia_vencimento: undefined,
@@ -139,6 +147,7 @@ export function ExpenseCategoryDialog({
         grupo: values.grupo,
         frequencia: values.frequencia,
         categoria_id: values.categoria_id || null,
+        cartao_id: values.cartao_id || null,
         due_month: values.due_month ? Number(values.due_month) : null,
         charge_date: values.charge_date || null,
         dia_vencimento: values.dia_vencimento ? Number(values.dia_vencimento) : null,
@@ -200,6 +209,35 @@ export function ExpenseCategoryDialog({
             />
             <p className="text-xs text-muted-foreground">
               Usada como sugestão automática ao confirmar o pagamento ou lançar avulso.
+            </p>
+          </FormField>
+
+          <FormField label="Cartão (opcional)" htmlFor="cartao_id">
+            <Controller
+              control={control}
+              name="cartao_id"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="cartao_id" className="w-full">
+                    <SelectValue placeholder="Nenhum" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cartaoOptions.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        <span
+                          className="mr-1 inline-block size-2.5 rounded-full"
+                          style={{ backgroundColor: c.cor }}
+                        />
+                        {c.nome}
+                        <span className="text-muted-foreground"> · {c.tipo === 'credito' ? 'Crédito' : 'Débito'}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            <p className="text-xs text-muted-foreground">
+              Preenche o cartão automaticamente ao lançar esse gasto fixo avulso.
             </p>
           </FormField>
 

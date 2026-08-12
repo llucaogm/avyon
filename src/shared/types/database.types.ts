@@ -272,6 +272,7 @@ export type Database = {
       }
       expense_categories: {
         Row: {
+          cartao_id: string | null
           categoria_id: string | null
           charge_date: string | null
           created_at: string
@@ -289,6 +290,7 @@ export type Database = {
           valor_mensal: number
         }
         Insert: {
+          cartao_id?: string | null
           categoria_id?: string | null
           charge_date?: string | null
           created_at?: string
@@ -306,6 +308,7 @@ export type Database = {
           valor_mensal?: number
         }
         Update: {
+          cartao_id?: string | null
           categoria_id?: string | null
           charge_date?: string | null
           created_at?: string
@@ -323,6 +326,13 @@ export type Database = {
           valor_mensal?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "expense_categories_cartao_id_fkey"
+            columns: ["cartao_id"]
+            isOneToOne: false
+            referencedRelation: "cartoes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "expense_categories_categoria_id_fkey"
             columns: ["categoria_id"]
@@ -494,6 +504,7 @@ export type Database = {
       }
       income_categories: {
         Row: {
+          cartao_id: string | null
           categoria_id: string | null
           created_at: string
           id: string
@@ -506,6 +517,7 @@ export type Database = {
           valor_mensal: number
         }
         Insert: {
+          cartao_id?: string | null
           categoria_id?: string | null
           created_at?: string
           id?: string
@@ -518,6 +530,7 @@ export type Database = {
           valor_mensal?: number
         }
         Update: {
+          cartao_id?: string | null
           categoria_id?: string | null
           created_at?: string
           id?: string
@@ -530,6 +543,13 @@ export type Database = {
           valor_mensal?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "income_categories_cartao_id_fkey"
+            columns: ["cartao_id"]
+            isOneToOne: false
+            referencedRelation: "cartoes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "income_categories_categoria_id_fkey"
             columns: ["categoria_id"]

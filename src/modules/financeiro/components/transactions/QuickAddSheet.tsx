@@ -160,15 +160,18 @@ export function QuickAddSheet({ open, onOpenChange, transaction }: QuickAddSheet
     }
   }, [categoriaSuggestion, autoSuggestedCategoria, setValue])
 
-  // A Gasto Fixo/Receita Fixa can carry its own default Categoria — applying it
-  // when one is picked saves re-choosing the same tag every month. Only for new
-  // lançamentos: while editing, the transaction's own saved categoria_id already
-  // won and must not be silently swapped out just because its Gasto Fixo changed.
+  // A Gasto Fixo/Receita Fixa can carry its own default Categoria e Cartão —
+  // applying eles quando um é escolhido evita re-selecionar todo mês. Só pra
+  // lançamentos novos: editando, o que já está salvo na transação venceu e não
+  // pode ser trocado por baixo dos panos só porque o Gasto Fixo mudou depois.
   useEffect(() => {
     if (isEditing || !categoryId) return
     const fixo = fixoOptions.find((c) => c.id === categoryId)
     if (fixo?.categoria_id) {
       setValue('categoriaId', fixo.categoria_id)
+    }
+    if (fixo?.cartao_id) {
+      setValue('cartaoId', fixo.cartao_id)
     }
   }, [categoryId, fixoOptions, isEditing, setValue])
 

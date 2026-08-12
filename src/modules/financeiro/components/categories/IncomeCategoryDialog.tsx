@@ -20,6 +20,7 @@ import {
 } from '@/shared/components/ui/select'
 import { useCreateIncomeCategory, useUpdateIncomeCategory } from '@/modules/financeiro/hooks/useCategories'
 import { useCategorias } from '@/modules/financeiro/hooks/useCategorias'
+import { useCartoes } from '@/modules/financeiro/hooks/useCartoes'
 import { getErrorMessage } from '@/shared/lib/errors'
 import { FormField } from '@/shared/components/common/FormField'
 import { SubmitButton } from '@/shared/components/common/SubmitButton'
@@ -30,6 +31,7 @@ const schema = z.object({
   valor_mensal: z.coerce.number().min(0, 'Não pode ser negativo'),
   recorrencia: z.enum(['mensal', 'anual', 'semestral', 'eventual']),
   categoria_id: z.string().optional(),
+  cartao_id: z.string().optional(),
   observacao: z.string().optional(),
 })
 
@@ -53,6 +55,9 @@ export function IncomeCategoryDialog({ open, onOpenChange, category }: IncomeCat
   const createCategory = useCreateIncomeCategory()
   const updateCategory = useUpdateIncomeCategory()
   const { data: categorias = [] } = useCategorias('receita')
+  // Só débito — crédito nunca recebe lançamento de entrada, só via "Pagar
+  // fatura" em Cartões, mesma regra do QuickAddSheet.
+  const { data: cartaoOptions = [] } = useCartoes('debito')
   const isEditing = !!category
 
   const { register, handleSubmit, control, reset, formState: { errors } } = useForm<
@@ -61,7 +66,14 @@ export function IncomeCategoryDialog({ open, onOpenChange, category }: IncomeCat
     FormOutput
   >({
     resolver: zodResolver(schema),
-    defaultValues: { nome: '', valor_mensal: 0, recorrencia: 'mensal', categoria_id: undefined, observacao: '' },
+    defaultValues: {
+      nome: '',
+      valor_mensal: 0,
+      recorrencia: 'mensal',
+      categoria_id: undefined,
+      cartao_id: undefined,
+      observacao: '',
+    },
   })
 
   useEffect(() => {
@@ -73,9 +85,17 @@ export function IncomeCategoryDialog({ open, onOpenChange, category }: IncomeCat
               valor_mensal: category.valor_mensal,
               recorrencia: category.recorrencia,
               categoria_id: category.categoria_id ?? undefined,
+              cartao_id: category.cartao_id ?? undefined,
               observacao: category.observacao ?? '',
             }
-          : { nome: '', valor_mensal: 0, recorrencia: 'mensal', categoria_id: undefined, observacao: '' },
+          : {
+              nome: '',
+              valor_mensal: 0,
+              recorrencia: 'mensal',
+              categoria_id: undefined,
+              cartao_id: undefined,
+              observacao: '',
+            },
       )
     }
   }, [open, category, reset])
@@ -87,6 +107,7 @@ export function IncomeCategoryDialog({ open, onOpenChange, category }: IncomeCat
         valor_mensal: values.valor_mensal,
         recorrencia: values.recorrencia,
         categoria_id: values.categoria_id || null,
+        cartao_id: values.cartao_id || null,
         observacao: values.observacao || null,
       }
       if (isEditing) {
@@ -165,6 +186,34 @@ export function IncomeCategoryDialog({ open, onOpenChange, category }: IncomeCat
             />
             <p className="text-xs text-muted-foreground">
               Usada como sugestão automática ao confirmar o recebimento ou lançar avulso.
+            </p>
+          </FormField>
+
+          <FormField label="Cartão (opcional)" htmlFor="cartao_id">
+            <Controller
+              control={control}
+              name="cartao_id"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="cartao_id" className="w-full">
+                    <SelectValue placeholder="Nenhum" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cartaoOptions.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        <span
+                          className="mr-1 inline-block size-2.5 rounded-full"
+                          style={{ backgroundColor: c.cor }}
+                        />
+                        {c.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            <p className="text-xs text-muted-foreground">
+              Preenche o cartão automaticamente ao lançar essa receita fixa avulsa.
             </p>
           </FormField>
 
