@@ -59,6 +59,7 @@ export default function BudgetPage() {
     tipo: 'saida' | 'entrada'
     categoryId: string
     categoriaId: string | null
+    cartaoId: string | null
     nome: string
     valor: number
   }) {
@@ -71,6 +72,7 @@ export default function BudgetPage() {
         expense_category_id: opts.tipo === 'saida' ? opts.categoryId : null,
         income_category_id: opts.tipo === 'entrada' ? opts.categoryId : null,
         categoria_id: opts.categoriaId,
+        cartao_id: opts.cartaoId,
       })
       if (opts.tipo === 'saida') {
         setPago.mutate(
@@ -132,6 +134,7 @@ export default function BudgetPage() {
                             tipo: 'entrada',
                             categoryId: c.categoryId,
                             categoriaId: c.categoriaId,
+                            cartaoId: c.cartaoId,
                             nome: c.nome,
                             valor: c.previsto,
                           })
@@ -233,6 +236,7 @@ export default function BudgetPage() {
                               tipo: 'saida',
                               categoryId: c.categoryId,
                               categoriaId: c.categoriaId,
+                              cartaoId: c.cartaoId,
                               nome: c.nome,
                               valor: c.previsto,
                             })
