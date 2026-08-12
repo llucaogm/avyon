@@ -214,10 +214,9 @@ export function MindMapCanvas({ root, posicoes, onMoveNode }: MindMapCanvasProps
                     onPointerUp={handleNodePointerUp}
                     onPointerCancel={handleNodePointerUp}
                     className={cn(
-                      'flex h-full w-full cursor-grab items-center justify-center overflow-hidden rounded-2xl px-2.5 py-1 text-center leading-tight break-words touch-none active:cursor-grabbing',
-                      node.depth === 0 &&
-                        'bg-gradient-brand font-display line-clamp-2 text-sm font-semibold text-primary-foreground',
-                      node.depth === 1 && 'line-clamp-2 border text-xs font-medium text-foreground',
+                      'flex h-full w-full cursor-grab items-center justify-center overflow-hidden rounded-2xl px-2.5 py-1 touch-none active:cursor-grabbing',
+                      node.depth === 0 && 'bg-gradient-brand',
+                      node.depth === 1 && 'border',
                     )}
                     style={
                       node.depth === 1
@@ -228,7 +227,19 @@ export function MindMapCanvas({ root, posicoes, onMoveNode }: MindMapCanvasProps
                         : undefined
                     }
                   >
-                    {node.titulo}
+                    {/* line-clamp needs its own block box — combined with the
+                        parent's `flex` (for centering) the two `display` values
+                        fight and the clamp silently stops working, so text
+                        overflows raggedly instead of clamping with an ellipsis. */}
+                    <span
+                      className={cn(
+                        'line-clamp-2 text-center leading-tight break-words',
+                        node.depth === 0 && 'font-display text-sm font-semibold text-primary-foreground',
+                        node.depth === 1 && 'text-xs font-medium text-foreground',
+                      )}
+                    >
+                      {node.titulo}
+                    </span>
                   </div>
                 ) : (
                   <div
