@@ -25,36 +25,53 @@ function roundedRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, w:
   ctx.closePath()
 }
 
+function truncateToWidth(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string {
+  let s = text
+  while (s.length > 0 && ctx.measureText(`${s}…`).width > maxWidth) {
+    s = s.slice(0, -1)
+  }
+  return `${s}…`
+}
+
 /** Wraps to at most `maxLines`, ellipsizing the last line if there's more text —
- * a canvas approximation of the `line-clamp` the on-screen cards use. */
+ * a canvas approximation of the `line-clamp` the on-screen cards use. Handles a
+ * single word wider than `maxWidth` on its own (forced-truncates it) instead of
+ * letting it overflow unbounded — canvas text has no automatic word-wrap or
+ * clipping the way CSS does. */
 function wrapLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, maxLines: number): string[] {
   const words = text.split(/\s+/).filter(Boolean)
   const lines: string[] = []
   let current = ''
-  let wordIndex = 0
+  let i = 0
 
-  for (; wordIndex < words.length; wordIndex++) {
-    const word = words[wordIndex]
+  for (; i < words.length; i++) {
+    const word = words[i]
     const test = current ? `${current} ${word}` : word
-    if (current && ctx.measureText(test).width > maxWidth) {
-      lines.push(current)
-      current = word
-      if (lines.length === maxLines) break
-    } else {
+    if (ctx.measureText(test).width <= maxWidth) {
       current = test
+      continue
+    }
+    if (current) {
+      lines.push(current)
+      current = ''
+      if (lines.length === maxLines) break
+      i--
+      continue
+    }
+    lines.push(truncateToWidth(ctx, word, maxWidth))
+    current = ''
+    if (lines.length === maxLines) {
+      i++
+      break
     }
   }
-  if (lines.length < maxLines && current) {
+  if (current && lines.length < maxLines) {
     lines.push(current)
-    wordIndex = words.length
+    i = words.length
   }
 
-  if (wordIndex < words.length && lines.length > 0) {
-    let last = lines[lines.length - 1]
-    while (last.length > 0 && ctx.measureText(`${last}…`).width > maxWidth) {
-      last = last.slice(0, -1)
-    }
-    lines[lines.length - 1] = `${last}…`
+  if (i < words.length && lines.length > 0) {
+    lines[lines.length - 1] = truncateToWidth(ctx, lines[lines.length - 1].replace(/…$/, ''), maxWidth)
   }
   return lines
 }
@@ -172,6 +189,14 @@ export async function exportMindMapPng({ root, posicoes, titulo }: ExportOptions
       ctx.stroke()
     }
 
+    // Text is clipped to the node's own box — canvas has no `overflow: hidden`,
+    // so without this a long word or an off-by-one wrap would spill visually
+    // into whatever's drawn next (neighbouring nodes, edges) instead of just
+    // being cut off cleanly at the box edge like the on-screen CSS version.
+    ctx.save()
+    roundedRectPath(ctx, x, y, w, h, 18)
+    ctx.clip()
+
     if (node.depth <= 1) {
       ctx.fillStyle = node.depth === 0 ? colors.primaryForeground : colors.foreground
       ctx.font = node.depth === 0 ? "600 14px 'Space Grotesk Variable', sans-serif" : "500 12px 'Geist Variable', sans-serif"
@@ -206,6 +231,8 @@ export async function exportMindMapPng({ root, posicoes, titulo }: ExportOptions
         ctx.fillText(`+${detalhesRestantes} mais`, innerX, cursorY)
       }
     }
+
+    ctx.restore()
   })
 
   const dataUrl = canvas.toDataURL('image/png')
