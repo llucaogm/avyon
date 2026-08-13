@@ -103,6 +103,16 @@ function ReferenciaTile({
   onDelete: () => void
 }) {
   const plataformaCor = r.plataforma ? PLATAFORMA_CORES[r.plataforma] : 'var(--muted-foreground)'
+  const [imgError, setImgError] = useState(false)
+
+  // Muitos CDNs de vídeo bloqueiam hotlink direto (referrer/CORS) mesmo pra uma
+  // URL de oEmbed "pública" — sem isso, uma imagem que falha renderiza vazia,
+  // deixando só o fundo escuro por trás em vez do card colorido de fallback.
+  useEffect(() => {
+    setImgError(false)
+  }, [r.thumbnail_url])
+
+  const showImage = !!r.thumbnail_url && !imgError
 
   return (
     <a
@@ -118,8 +128,15 @@ function ReferenciaTile({
       )}
       style={{ '--stagger-index': Math.min(index, 8) } as CSSProperties}
     >
-      {r.thumbnail_url ? (
-        <img src={r.thumbnail_url} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+      {showImage ? (
+        <img
+          src={r.thumbnail_url!}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          onError={() => setImgError(true)}
+        />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: r.cor }}>
           <Play className="size-8 text-white/70" />
