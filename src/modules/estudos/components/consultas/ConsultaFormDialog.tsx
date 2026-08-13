@@ -1,8 +1,9 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, type ChangeEvent } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
+import { Upload } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -12,6 +13,7 @@ import {
 } from '@/shared/components/ui/dialog'
 import { Input } from '@/shared/components/ui/input'
 import { Textarea } from '@/shared/components/ui/textarea'
+import { Button } from '@/shared/components/ui/button'
 import {
   Select,
   SelectContent,
@@ -58,14 +60,42 @@ export function ConsultaFormDialog({ open, onOpenChange, consulta }: ConsultaFor
   const updateConsulta = useUpdateConsulta()
   const isEditing = !!consulta
 
-  const { register, handleSubmit, control, reset, formState: { errors } } = useForm<FormValues>({
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    setValue,
+    getValues,
+    formState: { errors },
+  } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: defaultValuesFor(consulta),
   })
 
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   useEffect(() => {
     if (open) reset(defaultValuesFor(consulta))
   }, [open, consulta, reset])
+
+  async function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    try {
+      const text = await file.text()
+      setValue('html', text, { shouldValidate: true })
+      if (!getValues('titulo').trim()) {
+        const match = /<title[^>]*>([^<]*)<\/title>/i.exec(text)
+        const nomeArquivo = file.name.replace(/\.html?$/i, '')
+        setValue('titulo', match?.[1]?.trim() || nomeArquivo)
+      }
+      toast.success('Arquivo importado')
+    } catch {
+      toast.error('Não consegui ler esse arquivo')
+    }
+  }
 
   async function onSubmit(values: FormValues) {
     try {
@@ -127,15 +157,32 @@ export function ConsultaFormDialog({ open, onOpenChange, consulta }: ConsultaFor
           </FormField>
 
           <FormField label="HTML do manual" htmlFor="html" error={errors.html?.message}>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".html,text/html"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="self-start"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Upload className="size-4" />
+              Importar arquivo .html
+            </Button>
             <Textarea
               id="html"
               rows={10}
-              placeholder="Cole aqui o HTML completo do manual..."
+              placeholder="...ou cole aqui o HTML completo do manual"
               className="font-mono text-xs"
               {...register('html')}
             />
             <p className="text-xs text-muted-foreground">
-              Cole o arquivo inteiro (com &lt;html&gt;, &lt;style&gt; etc.) — cada consulta guarda seu próprio visual.
+              Cada consulta guarda seu próprio visual — perfeito pra manuais com design diferente entre si.
             </p>
           </FormField>
 
