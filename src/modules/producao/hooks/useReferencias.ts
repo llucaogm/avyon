@@ -2,7 +2,29 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/shared/lib/supabaseClient'
 import { useAuth } from '@/shared/context/AuthProvider'
 import { requireUser } from '@/shared/lib/errors'
-import type { TablesInsert, TablesUpdate } from '@/shared/types/database.types'
+import type { Enums, TablesInsert, TablesUpdate } from '@/shared/types/database.types'
+
+interface OembedResult {
+  plataforma: Enums<'post_plataforma'>
+  titulo: string | null
+  autor: string | null
+  thumbnail_url: string | null
+}
+
+/** Busca pontual — não é uma mutation de dados do app, só um proxy pra Edge
+ * Function que consulta o oEmbed público de YouTube/TikTok (Instagram não tem
+ * oEmbed público, volta com campos vazios de propósito). */
+export function useFetchOembed() {
+  return useMutation({
+    mutationFn: async (url: string) => {
+      const { data, error } = await supabase.functions.invoke<OembedResult>('oembed', { body: { url } })
+      if (error) throw error
+      if (!data) throw new Error('Resposta vazia ao buscar preview')
+      return data
+    },
+    meta: { action: 'referencia.fetch_oembed' },
+  })
+}
 
 export function useReferencias() {
   const { user } = useAuth()

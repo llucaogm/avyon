@@ -837,33 +837,42 @@ export type Database = {
       }
       referencias: {
         Row: {
+          autor: string | null
           cor: string
           created_at: string
           id: string
           observacao: string | null
+          plataforma: Database["public"]["Enums"]["post_plataforma"] | null
           post_id: string | null
+          thumbnail_url: string | null
           tipo: string | null
           titulo: string
           url: string | null
           user_id: string
         }
         Insert: {
+          autor?: string | null
           cor: string
           created_at?: string
           id?: string
           observacao?: string | null
+          plataforma?: Database["public"]["Enums"]["post_plataforma"] | null
           post_id?: string | null
+          thumbnail_url?: string | null
           tipo?: string | null
           titulo: string
           url?: string | null
           user_id: string
         }
         Update: {
+          autor?: string | null
           cor?: string
           created_at?: string
           id?: string
           observacao?: string | null
+          plataforma?: Database["public"]["Enums"]["post_plataforma"] | null
           post_id?: string | null
+          thumbnail_url?: string | null
           tipo?: string | null
           titulo?: string
           url?: string | null
