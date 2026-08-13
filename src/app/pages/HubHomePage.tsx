@@ -33,24 +33,24 @@ const MODULES = [
 export default function HubHomePage() {
   return (
     <div className="flex flex-col gap-6 px-4 pt-8 pb-24 md:px-8 md:pb-8">
-      <div className="mx-auto w-full max-w-4xl">
+      <div className="mx-auto w-full max-w-5xl">
         <h1 className="font-display text-2xl font-semibold">Bem-vindo ao seu hub</h1>
         <p className="mt-1 text-sm text-muted-foreground">Escolha o que quer ver agora.</p>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
           {MODULES.map(({ to, label, description, icon: Icon }, index) => (
             <Link key={to} to={to} className="press-feedback lift-on-hover block">
               <Card
                 className="animate-fade-in-up h-full"
                 style={{ '--stagger-index': index } as CSSProperties}
               >
-                <CardContent className="flex flex-col gap-3 py-6">
-                  <span className="bg-gradient-brand text-primary-foreground flex size-10 items-center justify-center rounded-full">
-                    <Icon className="size-5" />
+                <CardContent className="flex flex-col gap-4 px-6 py-8">
+                  <span className="bg-gradient-brand text-primary-foreground flex size-14 items-center justify-center rounded-full">
+                    <Icon className="size-7" />
                   </span>
                   <div>
-                    <p className="font-display font-semibold">{label}</p>
-                    <p className="text-sm text-muted-foreground">{description}</p>
+                    <p className="font-display text-lg font-semibold">{label}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{description}</p>
                   </div>
                   <span className="text-primary flex items-center gap-1 text-sm font-medium">
                     Abrir <ArrowRight className="size-4" />
