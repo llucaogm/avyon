@@ -502,6 +502,27 @@ export type Database = {
         }
         Relationships: []
       }
+      ideias: {
+        Row: {
+          conteudo: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          conteudo: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          conteudo?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       income_categories: {
         Row: {
           cartao_id: string | null
@@ -731,6 +752,130 @@ export type Database = {
         }
         Relationships: []
       }
+      posts: {
+        Row: {
+          created_at: string
+          data_publicacao: string | null
+          id: string
+          legenda: string | null
+          observacao: string | null
+          plataforma: Database["public"]["Enums"]["post_plataforma"]
+          status: Database["public"]["Enums"]["post_status"]
+          tipo: Database["public"]["Enums"]["post_tipo"]
+          titulo: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data_publicacao?: string | null
+          id?: string
+          legenda?: string | null
+          observacao?: string | null
+          plataforma?: Database["public"]["Enums"]["post_plataforma"]
+          status?: Database["public"]["Enums"]["post_status"]
+          tipo?: Database["public"]["Enums"]["post_tipo"]
+          titulo: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data_publicacao?: string | null
+          id?: string
+          legenda?: string | null
+          observacao?: string | null
+          plataforma?: Database["public"]["Enums"]["post_plataforma"]
+          status?: Database["public"]["Enums"]["post_status"]
+          tipo?: Database["public"]["Enums"]["post_tipo"]
+          titulo?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      referencias: {
+        Row: {
+          cor: string
+          created_at: string
+          id: string
+          observacao: string | null
+          post_id: string | null
+          tipo: string | null
+          titulo: string
+          url: string | null
+          user_id: string
+        }
+        Insert: {
+          cor: string
+          created_at?: string
+          id?: string
+          observacao?: string | null
+          post_id?: string | null
+          tipo?: string | null
+          titulo: string
+          url?: string | null
+          user_id: string
+        }
+        Update: {
+          cor?: string
+          created_at?: string
+          id?: string
+          observacao?: string | null
+          post_id?: string | null
+          tipo?: string | null
+          titulo?: string
+          url?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referencias_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roteiros: {
+        Row: {
+          blocos: Json
+          created_at: string
+          id: string
+          post_id: string | null
+          titulo: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          blocos?: Json
+          created_at?: string
+          id?: string
+          post_id?: string | null
+          titulo: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          blocos?: Json
+          created_at?: string
+          id?: string
+          post_id?: string | null
+          titulo?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roteiros_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transactions: {
         Row: {
           cartao_id: string | null
@@ -834,6 +979,15 @@ export type Database = {
         | "aula"
         | "podcast"
         | "ideia"
+      post_plataforma: "instagram" | "tiktok" | "youtube" | "linkedin" | "outro"
+      post_status:
+        | "ideia"
+        | "roteiro"
+        | "gravacao"
+        | "edicao"
+        | "agendado"
+        | "publicado"
+      post_tipo: "estatico" | "carrossel" | "reels" | "video" | "stories"
       study_color: "teal" | "blue" | "amber" | "rose" | "violet" | "green"
     }
     CompositeTypes: {
@@ -978,6 +1132,16 @@ export const Constants = {
         "podcast",
         "ideia",
       ],
+      post_plataforma: ["instagram", "tiktok", "youtube", "linkedin", "outro"],
+      post_status: [
+        "ideia",
+        "roteiro",
+        "gravacao",
+        "edicao",
+        "agendado",
+        "publicado",
+      ],
+      post_tipo: ["estatico", "carrossel", "reels", "video", "stories"],
       study_color: ["teal", "blue", "amber", "rose", "violet", "green"],
     },
   },

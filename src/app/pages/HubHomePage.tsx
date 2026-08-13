@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
-import { Wallet, ListChecks, GraduationCap, ArrowRight } from 'lucide-react'
+import { Wallet, ListChecks, GraduationCap, Clapperboard, ArrowRight } from 'lucide-react'
 import { Card, CardContent } from '@/shared/components/ui/card'
 
 const MODULES = [
@@ -22,16 +22,22 @@ const MODULES = [
     description: 'Anotações do que você lê, vê e ouve.',
     icon: GraduationCap,
   },
+  {
+    to: '/producao',
+    label: 'Produção',
+    description: 'Calendário de postagens, roteiros e referências.',
+    icon: Clapperboard,
+  },
 ]
 
 export default function HubHomePage() {
   return (
     <div className="flex flex-col gap-6 px-4 pt-8 pb-24 md:px-8 md:pb-8">
-      <div className="mx-auto w-full max-w-3xl">
+      <div className="mx-auto w-full max-w-4xl">
         <h1 className="font-display text-2xl font-semibold">Bem-vindo ao seu hub</h1>
         <p className="mt-1 text-sm text-muted-foreground">Escolha o que quer ver agora.</p>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {MODULES.map(({ to, label, description, icon: Icon }, index) => (
             <Link key={to} to={to} className="press-feedback lift-on-hover block">
               <Card

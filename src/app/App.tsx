@@ -31,6 +31,13 @@ import ChatThreadPage from '@/modules/estudos/pages/ChatThreadPage'
 import MapasListPage from '@/modules/estudos/pages/MapasListPage'
 import MapaViewPage from '@/modules/estudos/pages/MapaViewPage'
 
+import { ProducaoShell } from '@/modules/producao/components/layout/ProducaoShell'
+import CalendarioPage from '@/modules/producao/pages/CalendarioPage'
+import RoteirosPage from '@/modules/producao/pages/RoteirosPage'
+import RoteiroEditorPage from '@/modules/producao/pages/RoteiroEditorPage'
+import ReferenciasPage from '@/modules/producao/pages/ReferenciasPage'
+import IdeiasPage from '@/modules/producao/pages/IdeiasPage'
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -67,6 +74,14 @@ function App() {
                   <Route path="chat/:conversaId" element={<ChatThreadPage />} />
                   <Route path="mapas" element={<MapasListPage />} />
                   <Route path="mapas/:mapaId" element={<MapaViewPage />} />
+                </Route>
+
+                <Route path="/producao" element={<ProducaoShell />}>
+                  <Route index element={<CalendarioPage />} />
+                  <Route path="roteiros" element={<RoteirosPage />} />
+                  <Route path="roteiros/:roteiroId" element={<RoteiroEditorPage />} />
+                  <Route path="referencias" element={<ReferenciasPage />} />
+                  <Route path="ideias" element={<IdeiasPage />} />
                 </Route>
               </Route>
             </Route>
