@@ -184,6 +184,47 @@ export type Database = {
           },
         ]
       }
+      consultas: {
+        Row: {
+          created_at: string
+          descricao: string | null
+          html: string
+          id: string
+          materia_id: string | null
+          titulo: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string | null
+          html: string
+          id?: string
+          materia_id?: string | null
+          titulo: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          descricao?: string | null
+          html?: string
+          id?: string
+          materia_id?: string | null
+          titulo?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consultas_materia_id_fkey"
+            columns: ["materia_id"]
+            isOneToOne: false
+            referencedRelation: "materias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversas: {
         Row: {
           created_at: string

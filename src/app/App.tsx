@@ -30,6 +30,8 @@ import ChatListPage from '@/modules/estudos/pages/ChatListPage'
 import ChatThreadPage from '@/modules/estudos/pages/ChatThreadPage'
 import MapasListPage from '@/modules/estudos/pages/MapasListPage'
 import MapaViewPage from '@/modules/estudos/pages/MapaViewPage'
+import ConsultasPage from '@/modules/estudos/pages/ConsultasPage'
+import ConsultaViewPage from '@/modules/estudos/pages/ConsultaViewPage'
 
 import { ProducaoShell } from '@/modules/producao/components/layout/ProducaoShell'
 import CalendarioPage from '@/modules/producao/pages/CalendarioPage'
@@ -74,6 +76,8 @@ function App() {
                   <Route path="chat/:conversaId" element={<ChatThreadPage />} />
                   <Route path="mapas" element={<MapasListPage />} />
                   <Route path="mapas/:mapaId" element={<MapaViewPage />} />
+                  <Route path="consultas" element={<ConsultasPage />} />
+                  <Route path="consultas/:consultaId" element={<ConsultaViewPage />} />
                 </Route>
 
                 <Route path="/producao" element={<ProducaoShell />}>
