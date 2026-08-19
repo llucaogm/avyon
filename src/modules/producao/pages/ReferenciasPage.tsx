@@ -35,13 +35,17 @@ import {
   useFetchOembed,
 } from '@/modules/producao/hooks/useReferencias'
 import { usePosts } from '@/modules/producao/hooks/usePosts'
-import { PLATAFORMA_CORES, PLATAFORMA_LABELS, PLATAFORMA_ORDER } from '@/modules/producao/lib/plataformaCores'
+import { PLATAFORMA_LABELS, PLATAFORMA_ORDER } from '@/modules/producao/lib/plataformaCores'
 import { TIPO_REFERENCIA_OPTIONS } from '@/modules/producao/lib/tipoReferencia'
 import { CATEGORIA_COLORS } from '@/modules/financeiro/lib/categoriaColors'
 import { getErrorMessage } from '@/shared/lib/errors'
 import { formatShortDate } from '@/shared/lib/formatters'
 import { cn } from '@/shared/lib/utils'
 import type { Tables } from '@/shared/types/database.types'
+
+function formatHandle(autor: string): string {
+  return autor.startsWith('@') ? autor : `@${autor}`
+}
 
 export default function ReferenciasPage() {
   const { data: referencias = [], isLoading } = useReferencias()
@@ -112,7 +116,6 @@ function ReferenciaRow({
   index: number
   onClick: () => void
 }) {
-  const plataformaCor = r.plataforma ? PLATAFORMA_CORES[r.plataforma] : 'var(--muted-foreground)'
   const [imgError, setImgError] = useState(false)
 
   // Muitos CDNs de vídeo bloqueiam hotlink direto (referrer/CORS) mesmo pra uma
@@ -150,8 +153,7 @@ function ReferenciaRow({
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: plataformaCor }} />
-          {r.autor && <span className="truncate">{r.autor}</span>}
+          {r.autor && <span className="truncate">{formatHandle(r.autor)}</span>}
           <span className="shrink-0">{formatShortDate(r.created_at)}</span>
         </div>
         <p className="mt-0.5 line-clamp-2 text-sm font-medium">{r.titulo}</p>
@@ -219,7 +221,7 @@ function ReferenciaViewSheet({
                   <Badge variant="secondary">{PLATAFORMA_LABELS[referencia.plataforma]}</Badge>
                 )}
                 {referencia.tipo && <Badge variant="secondary">{referencia.tipo}</Badge>}
-                {referencia.autor && <span>{referencia.autor}</span>}
+                {referencia.autor && <span>{formatHandle(referencia.autor)}</span>}
                 <span>{formatShortDate(referencia.created_at)}</span>
               </div>
 

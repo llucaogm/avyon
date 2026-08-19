@@ -84,9 +84,26 @@ interface OgFields {
   title: string | null
   description: string | null
   image: string | null
+  autor: string | null
 }
 
-const EMPTY_OG: OgFields = { title: null, description: null, image: null }
+const EMPTY_OG: OgFields = { title: null, description: null, image: null, autor: null }
+
+/** O og:url de um post do Instagram normalmente vem com o formato
+ * /<usuario>/reel/<código>/ ou /<usuario>/p/<código>/ — dá pra extrair o @
+ * do autor sem precisar de nenhuma API adicional. */
+function extractInstagramHandle(ogUrl: string | null): string | null {
+  if (!ogUrl) return null
+  try {
+    const segments = new URL(ogUrl).pathname.split('/').filter(Boolean)
+    if (segments.length >= 2 && ['reel', 'reels', 'p', 'tv'].includes(segments[1])) {
+      return `@${segments[0]}`
+    }
+    return null
+  } catch {
+    return null
+  }
+}
 
 /** Instagram/Facebook servem og:title/og:description/og:image pra qualquer
  * rastreador — é assim que WhatsApp/Messenger geram preview de link. Usando o
@@ -109,6 +126,7 @@ async function fetchOgTags(url: string): Promise<OgFields> {
           title: extractMeta(html, 'og:title'),
           description: extractMeta(html, 'og:description'),
           image: extractMeta(html, 'og:image'),
+          autor: extractInstagramHandle(extractMeta(html, 'og:url')),
         }
         if (result.title || result.description || result.image) return result
       }
@@ -208,7 +226,7 @@ Deno.serve(async (req) => {
       {
         plataforma,
         titulo: enriquecido?.titulo ?? titulo,
-        autor: dados.autor,
+        autor: dados.autor ?? og.autor,
         thumbnail_url,
         tipo: enriquecido?.tipo ?? null,
         resumo: enriquecido?.resumo ?? null,
