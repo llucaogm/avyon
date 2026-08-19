@@ -105,6 +105,22 @@ function extractInstagramHandle(ogUrl: string | null): string | null {
   }
 }
 
+/** O parâmetro ?igsh=... que o Instagram anexa ao compartilhar (rastreio de
+ * origem do share) faz o og:scrape falhar quase sempre — sem ele, o mesmo
+ * link funciona direto. Path sozinho já identifica o post por completo. */
+function cleanUrlForFetch(url: string): string {
+  try {
+    const parsed = new URL(url)
+    if (parsed.hostname.replace(/^www\./, '') === 'instagram.com') {
+      parsed.search = ''
+      return parsed.toString()
+    }
+    return url
+  } catch {
+    return url
+  }
+}
+
 /** Instagram/Facebook servem og:title/og:description/og:image pra qualquer
  * rastreador — é assim que WhatsApp/Messenger geram preview de link. Usando o
  * mesmo User-Agent que o próprio ecossistema Meta reconhece pra isso, sem
@@ -113,9 +129,10 @@ function extractInstagramHandle(ogUrl: string | null): string | null {
  * um intervalo curto antes de desistir; posts privados ou bloqueio persistente
  * só voltam campos vazios, nunca derrubam a function. */
 async function fetchOgTags(url: string): Promise<OgFields> {
+  const fetchUrl = cleanUrlForFetch(url)
   for (let tentativa = 0; tentativa < 3; tentativa++) {
     try {
-      const res = await fetch(url, {
+      const res = await fetch(fetchUrl, {
         headers: {
           'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
         },
