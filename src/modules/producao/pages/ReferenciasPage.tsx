@@ -131,7 +131,7 @@ function ReferenciaRow({
       className="animate-fade-in-up press-feedback flex items-center gap-3 rounded-xl border p-2.5 text-left transition-colors hover:bg-muted/40"
       style={{ '--stagger-index': Math.min(index, 8) } as CSSProperties}
     >
-      <div className="relative size-14 shrink-0 overflow-hidden rounded-lg">
+      <div className="relative aspect-[9/16] w-12 shrink-0 overflow-hidden rounded-lg">
         {showImage ? (
           <img
             src={r.thumbnail_url!}
@@ -143,7 +143,7 @@ function ReferenciaRow({
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center" style={{ backgroundColor: r.cor }}>
-            <Play className="size-5 text-white/70" />
+            <Play className="size-4 text-white/70" />
           </div>
         )}
       </div>
@@ -209,7 +209,7 @@ function ReferenciaViewSheet({
                 <img
                   src={referencia.thumbnail_url}
                   alt=""
-                  className="aspect-video w-full rounded-lg object-cover"
+                  className="aspect-[9/16] w-40 self-center rounded-lg object-cover"
                   referrerPolicy="no-referrer"
                 />
               )}
