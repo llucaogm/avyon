@@ -56,12 +56,16 @@ async function fetchOembed(endpoint: string): Promise<OembedFields> {
 // — a function não importa código do front, então fica hard-coded aqui.
 const COR_PADRAO = '#3987e5'
 
+// UUID real do único usuário do app — fixo em vez de resolver via
+// auth.admin.listUsers()[0], que pegou uma segunda conta (sobra de teste)
+// antes da conta real numa execução passada e atribuiu linhas ao dono errado.
+const OWNER_USER_ID = '873b1ffb-506b-4ae1-af46-8e1fd6f7ec7a'
+
 /**
  * Endpoint pensado pra ser chamado por um Atalho do iOS (Share Sheet), não pelo
  * app — por isso não usa a sessão Supabase do usuário (um Atalho não consegue
  * manter uma sessão que expira). Autentica com um segredo fixo (`x-share-token`,
- * comparado contra o secret `SHARE_TOKEN`) e resolve o usuário via admin client
- * (`auth.admin.listUsers`) já que este é um app de um usuário só.
+ * comparado contra o secret `SHARE_TOKEN`).
  */
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
@@ -86,16 +90,8 @@ Deno.serve(async (req) => {
 
     const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 
-    const {
-      data: { users },
-      error: usersError,
-    } = await admin.auth.admin.listUsers()
-    if (usersError) throw usersError
-    const user = users[0]
-    if (!user) return json({ error: 'Nenhum usuário encontrado' }, 500)
-
     const { error: insertError } = await admin.from('referencias').insert({
-      user_id: user.id,
+      user_id: OWNER_USER_ID,
       titulo: dados.titulo || url,
       url,
       plataforma,
