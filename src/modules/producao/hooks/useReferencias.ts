@@ -9,11 +9,13 @@ interface OembedResult {
   titulo: string | null
   autor: string | null
   thumbnail_url: string | null
+  tipo: string | null
+  resumo: string | null
 }
 
 /** Busca pontual — não é uma mutation de dados do app, só um proxy pra Edge
- * Function que consulta o oEmbed público de YouTube/TikTok (Instagram não tem
- * oEmbed público, volta com campos vazios de propósito). */
+ * Function que junta oEmbed (YouTube/TikTok) + og:tags (Instagram incluso) e,
+ * se sobrar texto, passa pela IA pra gerar título/tipo/resumo. */
 export function useFetchOembed() {
   return useMutation({
     mutationFn: async (url: string) => {

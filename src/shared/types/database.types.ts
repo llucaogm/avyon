@@ -844,6 +844,7 @@ export type Database = {
           observacao: string | null
           plataforma: Database["public"]["Enums"]["post_plataforma"] | null
           post_id: string | null
+          resumo: string | null
           thumbnail_url: string | null
           tipo: string | null
           titulo: string
@@ -858,6 +859,7 @@ export type Database = {
           observacao?: string | null
           plataforma?: Database["public"]["Enums"]["post_plataforma"] | null
           post_id?: string | null
+          resumo?: string | null
           thumbnail_url?: string | null
           tipo?: string | null
           titulo: string
@@ -872,6 +874,7 @@ export type Database = {
           observacao?: string | null
           plataforma?: Database["public"]["Enums"]["post_plataforma"] | null
           post_id?: string | null
+          resumo?: string | null
           thumbnail_url?: string | null
           tipo?: string | null
           titulo?: string

@@ -34,6 +34,7 @@ import {
 } from '@/modules/producao/hooks/useReferencias'
 import { usePosts } from '@/modules/producao/hooks/usePosts'
 import { PLATAFORMA_CORES, PLATAFORMA_LABELS, PLATAFORMA_ORDER } from '@/modules/producao/lib/plataformaCores'
+import { TIPO_REFERENCIA_OPTIONS } from '@/modules/producao/lib/tipoReferencia'
 import { CATEGORIA_COLORS } from '@/modules/financeiro/lib/categoriaColors'
 import { getErrorMessage } from '@/shared/lib/errors'
 import { cn } from '@/shared/lib/utils'
@@ -188,6 +189,7 @@ const schema = z.object({
   plataforma: z.enum(['instagram', 'tiktok', 'youtube', 'linkedin', 'outro']).optional(),
   thumbnail_url: z.string().optional(),
   tipo: z.string().optional(),
+  resumo: z.string().optional(),
   cor: z.string().min(1),
   post_id: z.string().optional(),
   observacao: z.string().optional(),
@@ -203,6 +205,7 @@ function defaultValuesFor(referencia: Tables<'referencias'> | undefined): FormVa
       plataforma: undefined,
       thumbnail_url: '',
       tipo: '',
+      resumo: '',
       cor: CATEGORIA_COLORS[0],
       post_id: undefined,
       observacao: '',
@@ -214,6 +217,7 @@ function defaultValuesFor(referencia: Tables<'referencias'> | undefined): FormVa
     plataforma: referencia.plataforma ?? undefined,
     thumbnail_url: referencia.thumbnail_url ?? '',
     tipo: referencia.tipo ?? '',
+    resumo: referencia.resumo ?? '',
     cor: referencia.cor,
     post_id: referencia.post_id ?? undefined,
     observacao: referencia.observacao ?? '',
@@ -266,8 +270,10 @@ function ReferenciaFormDialog({
       setValue('plataforma', result.plataforma)
       if (!getValues('titulo').trim() && result.titulo) setValue('titulo', result.titulo)
       if (result.thumbnail_url) setValue('thumbnail_url', result.thumbnail_url)
-      if (result.thumbnail_url || result.titulo) toast.success('Preview encontrado')
-      else toast.info('Sem preview automático pra esse link — cole uma imagem manualmente se quiser')
+      if (!getValues('tipo')?.trim() && result.tipo) setValue('tipo', result.tipo)
+      if (!getValues('resumo')?.trim() && result.resumo) setValue('resumo', result.resumo)
+      if (result.thumbnail_url || result.titulo || result.resumo) toast.success('Preview encontrado')
+      else toast.info('Sem preview automático pra esse link — preencha manualmente se quiser')
     } catch {
       // Busca de preview é um extra, não impede salvar a referência sem ele.
     }
@@ -288,6 +294,7 @@ function ReferenciaFormDialog({
                 plataforma: values.plataforma ?? null,
                 thumbnail_url: values.thumbnail_url || null,
                 tipo: values.tipo || null,
+                resumo: values.resumo || null,
                 cor: values.cor,
                 post_id: values.post_id || null,
                 observacao: values.observacao || null,
@@ -343,15 +350,41 @@ function ReferenciaFormDialog({
             </FormField>
 
             <FormField label="Tipo (opcional)" htmlFor="tipo">
-              <Input id="tipo" placeholder="Inspiração, dado..." {...register('tipo')} />
+              <Controller
+                control={control}
+                name="tipo"
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger id="tipo" className="w-full">
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TIPO_REFERENCIA_OPTIONS.map((t) => (
+                        <SelectItem key={t} value={t}>
+                          {t}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
             </FormField>
           </div>
 
           <FormField label="Thumbnail (opcional)" htmlFor="thumbnail_url">
             <Input id="thumbnail_url" type="url" placeholder="https://... (URL de uma imagem)" {...register('thumbnail_url')} />
             <p className="text-xs text-muted-foreground">
-              Preenchido automático pra YouTube/TikTok. Instagram não tem preview automático — cole uma URL de imagem aqui se quiser.
+              Preenchido automático quando dá pra achar (inclusive Instagram, via preview público do post).
             </p>
+          </FormField>
+
+          <FormField label="Resumo (opcional, gerado por IA)" htmlFor="resumo">
+            <Textarea
+              id="resumo"
+              rows={3}
+              placeholder="Preenchido automático quando o link tiver legenda/descrição pra ler"
+              {...register('resumo')}
+            />
           </FormField>
 
           <FormField label="Vincular a um post (opcional)" htmlFor="post_id">

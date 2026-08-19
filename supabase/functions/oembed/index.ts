@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import Anthropic from 'npm:@anthropic-ai/sdk'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -53,6 +54,109 @@ async function fetchOembed(endpoint: string): Promise<OembedFields> {
   }
 }
 
+/** O valor de content="..." vem com entidades HTML escapadas (og:image usa
+ * &amp; entre os parâmetros da query string) — sem decodificar, a URL quebra
+ * ao virar src de <img>, que não faz esse parsing sozinho. */
+function decodeHtmlEntities(text: string): string {
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;|&apos;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(parseInt(dec, 10)))
+}
+
+function extractMeta(html: string, property: string): string | null {
+  const patterns = [
+    new RegExp(`<meta[^>]+property=["']${property}["'][^>]+content=["']([^"']*)["']`, 'i'),
+    new RegExp(`<meta[^>]+content=["']([^"']*)["'][^>]+property=["']${property}["']`, 'i'),
+  ]
+  for (const re of patterns) {
+    const m = re.exec(html)
+    if (m) return decodeHtmlEntities(m[1])
+  }
+  return null
+}
+
+interface OgFields {
+  title: string | null
+  description: string | null
+  image: string | null
+}
+
+const EMPTY_OG: OgFields = { title: null, description: null, image: null }
+
+/** Instagram/Facebook servem og:title/og:description/og:image pra qualquer
+ * rastreador — é assim que WhatsApp/Messenger geram preview de link. Usando o
+ * mesmo User-Agent que o próprio ecossistema Meta reconhece pra isso, sem
+ * precisar de login nem token. Best-effort: posts privados ou bloqueio
+ * eventual só voltam campos vazios, nunca derrubam a function. */
+async function fetchOgTags(url: string): Promise<OgFields> {
+  try {
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
+      },
+    })
+    if (!res.ok) return EMPTY_OG
+    const html = await res.text()
+    return {
+      title: extractMeta(html, 'og:title'),
+      description: extractMeta(html, 'og:description'),
+      image: extractMeta(html, 'og:image'),
+    }
+  } catch {
+    return EMPTY_OG
+  }
+}
+
+const TIPO_OPTIONS = ['Dica', 'Inspiração', 'Tutorial', 'Estética', 'Referência técnica', 'Concorrente', 'Outro']
+
+const ENRICH_SYSTEM_PROMPT = `Você organiza referências salvas de vídeos/posts de redes sociais pra um criador de conteúdo. A partir do texto bruto dado (legenda, título ou descrição extraída do post), gere um título curto e claro, escolha o tipo mais adequado, e escreva um resumo objetivo de 2 a 4 frases sobre do que se trata. Responda em português.`
+
+const ENRICH_SCHEMA = {
+  type: 'object',
+  properties: {
+    titulo: { type: 'string', description: 'Título curto e claro pro card' },
+    tipo: { type: 'string', enum: TIPO_OPTIONS },
+    resumo: { type: 'string', description: '2 a 4 frases resumindo do que se trata' },
+  },
+  required: ['titulo', 'tipo', 'resumo'],
+  additionalProperties: false,
+} as const
+
+interface Enriquecido {
+  titulo: string
+  tipo: string
+  resumo: string
+}
+
+/** Só chama a IA se sobrou algum texto de verdade — nunca inventa conteúdo
+ * a partir do nada. Falha (API fora, resposta inesperada) volta null e o
+ * fluxo principal cai pros dados brutos que já tinha. */
+async function enrichWithClaude(rawText: string): Promise<Enriquecido | null> {
+  if (!rawText.trim()) return null
+  try {
+    const anthropic = new Anthropic({ apiKey: Deno.env.get('ANTHROPIC_API_KEY') })
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-5',
+      max_tokens: 1024,
+      thinking: { type: 'adaptive' },
+      system: ENRICH_SYSTEM_PROMPT,
+      output_config: { format: { type: 'json_schema', schema: ENRICH_SCHEMA } },
+      messages: [{ role: 'user', content: rawText.slice(0, 4000) }],
+    })
+    const textBlock = response.content.find((b) => b.type === 'text')
+    if (!textBlock || textBlock.type !== 'text') return null
+    return JSON.parse(textBlock.text) as Enriquecido
+  } catch (err) {
+    console.error('enrichWithClaude falhou', err)
+    return null
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
@@ -76,8 +180,6 @@ Deno.serve(async (req) => {
 
     const plataforma = detectPlataforma(url)
 
-    // Instagram e LinkedIn não têm oEmbed público (exigem app registrado + token)
-    // — ficam com campos vazios de propósito, o front usa o fallback colorido.
     let dados = EMPTY_FIELDS
     if (plataforma === 'youtube') {
       dados = await fetchOembed(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`)
@@ -85,7 +187,26 @@ Deno.serve(async (req) => {
       dados = await fetchOembed(`https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`)
     }
 
-    return json({ plataforma, ...dados }, 200)
+    // og:tags como reforço — preenche o que o oEmbed deixou vazio (cobre
+    // Instagram por completo, já que não tem oEmbed público nenhum).
+    const og = await fetchOgTags(url)
+    const titulo = dados.titulo ?? og.title
+    const thumbnail_url = dados.thumbnail_url ?? og.image
+    const rawText = [og.title, og.description].filter(Boolean).join('\n')
+
+    const enriquecido = await enrichWithClaude(rawText)
+
+    return json(
+      {
+        plataforma,
+        titulo: enriquecido?.titulo ?? titulo,
+        autor: dados.autor,
+        thumbnail_url,
+        tipo: enriquecido?.tipo ?? null,
+        resumo: enriquecido?.resumo ?? null,
+      },
+      200,
+    )
   } catch (err) {
     console.error(err)
     return json({ error: 'Erro ao buscar preview' }, 500)
