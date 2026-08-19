@@ -6,6 +6,7 @@ import { AuthProvider } from '@/shared/context/AuthProvider'
 import { ProtectedRoute } from '@/shared/components/auth/ProtectedRoute'
 import { HubShell } from '@/shared/components/layout/HubShell'
 import LoginPage from '@/app/pages/LoginPage'
+import PrivacyPolicyPage from '@/app/pages/PrivacyPolicyPage'
 import HubHomePage from '@/app/pages/HubHomePage'
 
 import { FinanceiroShell } from '@/modules/financeiro/components/layout/FinanceiroShell'
@@ -47,6 +48,7 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/privacidade" element={<PrivacyPolicyPage />} />
             <Route element={<ProtectedRoute />}>
               <Route element={<HubShell />}>
                 <Route path="/" element={<HubHomePage />} />
