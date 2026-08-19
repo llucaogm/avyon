@@ -34,6 +34,16 @@ export function formatDateTime(isoTimestamp: string): string {
   return dateTimeFormatter.format(new Date(isoTimestamp))
 }
 
+const shortDateFormatter = new Intl.DateTimeFormat('pt-BR', {
+  day: '2-digit',
+  month: 'short',
+})
+
+/** "19 de ago." — data curta sem hora nem ano, pra listas compactas. */
+export function formatShortDate(isoTimestamp: string): string {
+  return shortDateFormatter.format(new Date(isoTimestamp))
+}
+
 const monthLabelFormatter = new Intl.DateTimeFormat('pt-BR', {
   month: 'long',
   year: 'numeric',

@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { toast } from 'sonner'
 import { Plus, Trash2, Pencil, Play, Check } from 'lucide-react'
 import { Button } from '@/shared/components/ui/button'
+import { Badge } from '@/shared/components/ui/badge'
 import { Input } from '@/shared/components/ui/input'
 import { Textarea } from '@/shared/components/ui/textarea'
 import {
@@ -14,6 +15,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/shared/components/ui/dialog'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/shared/components/ui/sheet'
 import {
   Select,
   SelectContent,
@@ -37,6 +39,7 @@ import { PLATAFORMA_CORES, PLATAFORMA_LABELS, PLATAFORMA_ORDER } from '@/modules
 import { TIPO_REFERENCIA_OPTIONS } from '@/modules/producao/lib/tipoReferencia'
 import { CATEGORIA_COLORS } from '@/modules/financeiro/lib/categoriaColors'
 import { getErrorMessage } from '@/shared/lib/errors'
+import { formatShortDate } from '@/shared/lib/formatters'
 import { cn } from '@/shared/lib/utils'
 import type { Tables } from '@/shared/types/database.types'
 
@@ -45,13 +48,21 @@ export default function ReferenciasPage() {
   const deleteReferencia = useDeleteReferencia()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<Tables<'referencias'> | undefined>()
+  const [viewing, setViewing] = useState<Tables<'referencias'> | null>(null)
+
+  function handleDelete(id: string) {
+    deleteReferencia.mutate(id, {
+      onSuccess: () => setViewing(null),
+      onError: () => toast.error('Não consegui excluir essa referência'),
+    })
+  }
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-start justify-between">
         <div>
           <h1 className="font-display text-2xl font-semibold">Referências</h1>
-          <p className="text-sm text-muted-foreground">Cole um link — o feed monta sozinho o preview.</p>
+          <p className="text-sm text-muted-foreground">Cole um link — a lista monta sozinha o preview.</p>
         </div>
         <Button
           size="sm"
@@ -70,38 +81,36 @@ export default function ReferenciasPage() {
         <EmptyState message="Nenhuma referência ainda. Cole o link de um vídeo pra começar." />
       )}
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+      <div className="flex flex-col gap-2">
         {referencias.map((r, index) => (
-          <ReferenciaTile
-            key={r.id}
-            referencia={r}
-            index={index}
-            onEdit={() => {
-              setEditing(r)
-              setDialogOpen(true)
-            }}
-            onDelete={() =>
-              deleteReferencia.mutate(r.id, { onError: () => toast.error('Não consegui excluir essa referência') })
-            }
-          />
+          <ReferenciaRow key={r.id} referencia={r} index={index} onClick={() => setViewing(r)} />
         ))}
       </div>
 
       <ReferenciaFormDialog open={dialogOpen} onOpenChange={setDialogOpen} referencia={editing} />
+
+      <ReferenciaViewSheet
+        referencia={viewing}
+        onOpenChange={(v) => !v && setViewing(null)}
+        onEdit={(r) => {
+          setViewing(null)
+          setEditing(r)
+          setDialogOpen(true)
+        }}
+        onDelete={handleDelete}
+      />
     </div>
   )
 }
 
-function ReferenciaTile({
+function ReferenciaRow({
   referencia: r,
   index,
-  onEdit,
-  onDelete,
+  onClick,
 }: {
   referencia: Tables<'referencias'>
   index: number
-  onEdit: () => void
-  onDelete: () => void
+  onClick: () => void
 }) {
   const plataformaCor = r.plataforma ? PLATAFORMA_CORES[r.plataforma] : 'var(--muted-foreground)'
   const [imgError, setImgError] = useState(false)
@@ -116,70 +125,153 @@ function ReferenciaTile({
   const showImage = !!r.thumbnail_url && !imgError
 
   return (
-    <a
-      href={r.url || undefined}
-      target={r.url ? '_blank' : undefined}
-      rel={r.url ? 'noreferrer' : undefined}
-      onClick={(e) => {
-        if (!r.url) e.preventDefault()
-      }}
-      className={cn(
-        'animate-fade-in-up press-feedback relative aspect-square overflow-hidden rounded-xl border',
-        r.url ? 'cursor-pointer' : 'cursor-default',
-      )}
+    <button
+      type="button"
+      onClick={onClick}
+      className="animate-fade-in-up press-feedback flex items-center gap-3 rounded-xl border p-2.5 text-left transition-colors hover:bg-muted/40"
       style={{ '--stagger-index': Math.min(index, 8) } as CSSProperties}
     >
-      {showImage ? (
-        <img
-          src={r.thumbnail_url!}
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover"
-          loading="lazy"
-          referrerPolicy="no-referrer"
-          onError={() => setImgError(true)}
-        />
-      ) : (
-        <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: r.cor }}>
-          <Play className="size-8 text-white/70" />
+      <div className="relative size-14 shrink-0 overflow-hidden rounded-lg">
+        {showImage ? (
+          <img
+            src={r.thumbnail_url!}
+            alt=""
+            className="h-full w-full object-cover"
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center" style={{ backgroundColor: r.cor }}>
+            <Play className="size-5 text-white/70" />
+          </div>
+        )}
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <span className="size-1.5 shrink-0 rounded-full" style={{ backgroundColor: plataformaCor }} />
+          {r.autor && <span className="truncate">{r.autor}</span>}
+          <span className="shrink-0">{formatShortDate(r.created_at)}</span>
         </div>
-      )}
-
-      <span
-        className="absolute top-1.5 left-1.5 size-2.5 rounded-full ring-2 ring-black/30"
-        style={{ backgroundColor: plataformaCor }}
-      />
-
-      <div className="absolute top-1.5 right-1.5 flex gap-1">
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            onEdit()
-          }}
-          className="press-feedback flex size-6 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm"
-          aria-label="Editar referência"
-        >
-          <Pencil className="size-3" />
-        </button>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            onDelete()
-          }}
-          className="press-feedback flex size-6 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm"
-          aria-label="Excluir referência"
-        >
-          <Trash2 className="size-3" />
-        </button>
+        <p className="mt-0.5 line-clamp-2 text-sm font-medium">{r.titulo}</p>
+        {r.tipo && (
+          <Badge variant="secondary" className="mt-1.5">
+            {r.tipo}
+          </Badge>
+        )}
       </div>
+    </button>
+  )
+}
 
-      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-2 pt-6 pb-1.5">
-        <p className="line-clamp-2 text-xs leading-tight font-medium text-white">{r.titulo}</p>
-      </div>
-    </a>
+function ReferenciaViewSheet({
+  referencia,
+  onOpenChange,
+  onEdit,
+  onDelete,
+}: {
+  referencia: Tables<'referencias'> | null
+  onOpenChange: (v: boolean) => void
+  onEdit: (r: Tables<'referencias'>) => void
+  onDelete: (id: string) => void
+}) {
+  const updateReferencia = useUpdateReferencia()
+  const [notas, setNotas] = useState('')
+
+  useEffect(() => {
+    setNotas(referencia?.observacao ?? '')
+  }, [referencia])
+
+  async function handleSalvarNotas() {
+    if (!referencia) return
+    try {
+      await updateReferencia.mutateAsync({ id: referencia.id, values: { observacao: notas || null } })
+      toast.success('Nota salva')
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Erro ao salvar nota'))
+    }
+  }
+
+  const abrirLabel = referencia?.plataforma ? `Abrir no ${PLATAFORMA_LABELS[referencia.plataforma]}` : 'Abrir link'
+  const notasAlteradas = referencia && notas !== (referencia.observacao ?? '')
+
+  return (
+    <Sheet open={!!referencia} onOpenChange={onOpenChange}>
+      <SheetContent side="bottom" className="max-h-[90vh] overflow-y-auto">
+        {referencia && (
+          <>
+            <SheetHeader>
+              <SheetTitle>{referencia.titulo}</SheetTitle>
+            </SheetHeader>
+            <div className="flex flex-col gap-5 px-4 pb-6">
+              {referencia.thumbnail_url && (
+                <img
+                  src={referencia.thumbnail_url}
+                  alt=""
+                  className="aspect-video w-full rounded-lg object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              )}
+
+              <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                {referencia.plataforma && (
+                  <Badge variant="secondary">{PLATAFORMA_LABELS[referencia.plataforma]}</Badge>
+                )}
+                {referencia.tipo && <Badge variant="secondary">{referencia.tipo}</Badge>}
+                {referencia.autor && <span>{referencia.autor}</span>}
+                <span>{formatShortDate(referencia.created_at)}</span>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {referencia.url && (
+                  <Button asChild size="sm">
+                    <a href={referencia.url} target="_blank" rel="noreferrer">
+                      {abrirLabel} ↗
+                    </a>
+                  </Button>
+                )}
+                <Button variant="outline" size="sm" onClick={() => onEdit(referencia)}>
+                  <Pencil className="size-4" />
+                  Editar
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => onDelete(referencia.id)}>
+                  <Trash2 className="size-4" />
+                  Excluir
+                </Button>
+              </div>
+
+              {referencia.resumo && (
+                <div>
+                  <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">Resumo</p>
+                  <p className="text-sm leading-relaxed">{referencia.resumo}</p>
+                </div>
+              )}
+
+              <div>
+                <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">Notas</p>
+                <Textarea
+                  rows={3}
+                  placeholder="Suas anotações sobre essa referência"
+                  value={notas}
+                  onChange={(e) => setNotas(e.target.value)}
+                />
+                {notasAlteradas && (
+                  <Button
+                    size="sm"
+                    className="mt-2"
+                    onClick={handleSalvarNotas}
+                    disabled={updateReferencia.isPending}
+                  >
+                    Salvar nota
+                  </Button>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+      </SheetContent>
+    </Sheet>
   )
 }
 
@@ -435,7 +527,7 @@ function ReferenciaFormDialog({
             <p className="text-xs text-muted-foreground">Usada no quadrado do feed quando não há thumbnail.</p>
           </FormField>
 
-          <FormField label="Observação (opcional)" htmlFor="observacao">
+          <FormField label="Notas (opcional)" htmlFor="observacao">
             <Textarea id="observacao" rows={2} {...register('observacao')} />
           </FormField>
 
