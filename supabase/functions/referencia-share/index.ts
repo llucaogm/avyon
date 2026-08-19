@@ -88,24 +88,33 @@ interface OgFields {
 const EMPTY_OG: OgFields = { title: null, description: null, image: null }
 
 /** Instagram/Facebook servem og:title/og:description/og:image pra qualquer
- * rastreador (mesmo mecanismo do preview de link do WhatsApp/Messenger). */
+ * rastreador (mesmo mecanismo do preview de link do WhatsApp/Messenger) — mas
+ * o bloqueio é intermitente, não permanente (o mesmo link falha numa hora e
+ * funciona na próxima). Tenta até 3 vezes com um intervalo curto antes de
+ * desistir e cair no fallback. */
 async function fetchOgTags(url: string): Promise<OgFields> {
-  try {
-    const res = await fetch(url, {
-      headers: {
-        'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
-      },
-    })
-    if (!res.ok) return EMPTY_OG
-    const html = await res.text()
-    return {
-      title: extractMeta(html, 'og:title'),
-      description: extractMeta(html, 'og:description'),
-      image: extractMeta(html, 'og:image'),
+  for (let tentativa = 0; tentativa < 3; tentativa++) {
+    try {
+      const res = await fetch(url, {
+        headers: {
+          'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
+        },
+      })
+      if (res.ok) {
+        const html = await res.text()
+        const result = {
+          title: extractMeta(html, 'og:title'),
+          description: extractMeta(html, 'og:description'),
+          image: extractMeta(html, 'og:image'),
+        }
+        if (result.title || result.description || result.image) return result
+      }
+    } catch {
+      // tenta de novo
     }
-  } catch {
-    return EMPTY_OG
+    if (tentativa < 2) await new Promise((resolve) => setTimeout(resolve, 700))
   }
+  return EMPTY_OG
 }
 
 const TIPO_OPTIONS = ['Dica', 'Inspiração', 'Tutorial', 'Estética', 'Referência técnica', 'Concorrente', 'Outro']

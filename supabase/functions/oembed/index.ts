@@ -91,25 +91,33 @@ const EMPTY_OG: OgFields = { title: null, description: null, image: null }
 /** Instagram/Facebook servem og:title/og:description/og:image pra qualquer
  * rastreador — é assim que WhatsApp/Messenger geram preview de link. Usando o
  * mesmo User-Agent que o próprio ecossistema Meta reconhece pra isso, sem
- * precisar de login nem token. Best-effort: posts privados ou bloqueio
- * eventual só voltam campos vazios, nunca derrubam a function. */
+ * precisar de login nem token. O bloqueio é intermitente, não permanente (o
+ * mesmo link falha numa hora e funciona na próxima) — tenta até 3 vezes com
+ * um intervalo curto antes de desistir; posts privados ou bloqueio persistente
+ * só voltam campos vazios, nunca derrubam a function. */
 async function fetchOgTags(url: string): Promise<OgFields> {
-  try {
-    const res = await fetch(url, {
-      headers: {
-        'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
-      },
-    })
-    if (!res.ok) return EMPTY_OG
-    const html = await res.text()
-    return {
-      title: extractMeta(html, 'og:title'),
-      description: extractMeta(html, 'og:description'),
-      image: extractMeta(html, 'og:image'),
+  for (let tentativa = 0; tentativa < 3; tentativa++) {
+    try {
+      const res = await fetch(url, {
+        headers: {
+          'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
+        },
+      })
+      if (res.ok) {
+        const html = await res.text()
+        const result = {
+          title: extractMeta(html, 'og:title'),
+          description: extractMeta(html, 'og:description'),
+          image: extractMeta(html, 'og:image'),
+        }
+        if (result.title || result.description || result.image) return result
+      }
+    } catch {
+      // tenta de novo
     }
-  } catch {
-    return EMPTY_OG
+    if (tentativa < 2) await new Promise((resolve) => setTimeout(resolve, 700))
   }
+  return EMPTY_OG
 }
 
 const TIPO_OPTIONS = ['Dica', 'Inspiração', 'Tutorial', 'Estética', 'Referência técnica', 'Concorrente', 'Outro']
