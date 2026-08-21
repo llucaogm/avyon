@@ -27,6 +27,8 @@ import {
   TIPO_ORDER,
   STATUS_LABELS,
   STATUS_ORDER,
+  APROVACAO_LABELS,
+  APROVACAO_ORDER,
 } from '@/modules/producao/lib/plataformaCores'
 import { FormField } from '@/shared/components/common/FormField'
 import { SubmitButton } from '@/shared/components/common/SubmitButton'
@@ -38,7 +40,7 @@ const schema = z.object({
   plataforma: z.enum(['instagram', 'tiktok', 'youtube', 'linkedin', 'outro']),
   tipo: z.enum(['estatico', 'carrossel', 'reels', 'video', 'stories']),
   status: z.enum(['ideia', 'roteiro', 'gravacao', 'edicao', 'agendado', 'publicado']),
-  aprovado: z.boolean(),
+  aprovacao: z.enum(['esperando', 'aprovado', 'reprovado']),
   data_publicacao: z.string().optional(),
   legenda: z.string().optional(),
 })
@@ -60,7 +62,7 @@ function defaultValuesFor(post: Tables<'posts'> | undefined, defaultData?: strin
       plataforma: 'instagram',
       tipo: 'reels',
       status: 'ideia',
-      aprovado: false,
+      aprovacao: 'esperando',
       data_publicacao: defaultData ?? '',
       legenda: '',
     }
@@ -70,7 +72,7 @@ function defaultValuesFor(post: Tables<'posts'> | undefined, defaultData?: strin
     plataforma: post.plataforma,
     tipo: post.tipo,
     status: post.status,
-    aprovado: post.aprovado,
+    aprovacao: post.aprovacao,
     data_publicacao: post.data_publicacao ?? '',
     legenda: post.legenda ?? '',
   }
@@ -97,7 +99,7 @@ export function PostFormDialog({ open, onOpenChange, post, defaultData }: PostFo
         plataforma: values.plataforma,
         tipo: values.tipo,
         status: values.status,
-        aprovado: values.aprovado,
+        aprovacao: values.aprovacao,
         data_publicacao: values.data_publicacao || null,
         legenda: values.legenda || null,
       }
@@ -198,18 +200,21 @@ export function PostFormDialog({ open, onOpenChange, post, defaultData }: PostFo
             </FormField>
           </div>
 
-          <FormField label="Aprovação" htmlFor="aprovado">
+          <FormField label="Aprovação" htmlFor="aprovacao">
             <Controller
               control={control}
-              name="aprovado"
+              name="aprovacao"
               render={({ field }) => (
-                <Select value={field.value ? 'sim' : 'nao'} onValueChange={(v) => field.onChange(v === 'sim')}>
-                  <SelectTrigger id="aprovado" className="w-full">
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="aprovacao" className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="nao">Esperando aprovação</SelectItem>
-                    <SelectItem value="sim">Aprovado</SelectItem>
+                    {APROVACAO_ORDER.map((a) => (
+                      <SelectItem key={a} value={a}>
+                        {APROVACAO_LABELS[a]}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               )}

@@ -795,7 +795,7 @@ export type Database = {
       }
       posts: {
         Row: {
-          aprovado: boolean
+          aprovacao: Database["public"]["Enums"]["post_aprovacao"]
           created_at: string
           data_publicacao: string | null
           id: string
@@ -809,7 +809,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          aprovado?: boolean
+          aprovacao?: Database["public"]["Enums"]["post_aprovacao"]
           created_at?: string
           data_publicacao?: string | null
           id?: string
@@ -823,7 +823,7 @@ export type Database = {
           user_id: string
         }
         Update: {
-          aprovado?: boolean
+          aprovacao?: Database["public"]["Enums"]["post_aprovacao"]
           created_at?: string
           data_publicacao?: string | null
           id?: string
@@ -1035,6 +1035,7 @@ export type Database = {
         | "aula"
         | "podcast"
         | "ideia"
+      post_aprovacao: "esperando" | "aprovado" | "reprovado"
       post_plataforma: "instagram" | "tiktok" | "youtube" | "linkedin" | "outro"
       post_status:
         | "ideia"
@@ -1188,6 +1189,7 @@ export const Constants = {
         "podcast",
         "ideia",
       ],
+      post_aprovacao: ["esperando", "aprovado", "reprovado"],
       post_plataforma: ["instagram", "tiktok", "youtube", "linkedin", "outro"],
       post_status: [
         "ideia",
