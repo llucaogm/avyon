@@ -9,6 +9,13 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/shared/components/ui/sheet'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/shared/components/ui/dialog'
+import { useMediaQuery } from '@/shared/hooks/useMediaQuery'
 import { Input } from '@/shared/components/ui/input'
 import { ToggleGroup, ToggleGroupItem } from '@/shared/components/ui/toggle-group'
 import {
@@ -31,6 +38,7 @@ import { todayIso } from '@/modules/financeiro/lib/monthUtils'
 import { getErrorMessage } from '@/shared/lib/errors'
 import { FormField } from '@/shared/components/common/FormField'
 import { SubmitButton } from '@/shared/components/common/SubmitButton'
+import { cn } from '@/shared/lib/utils'
 import type { Tables } from '@/shared/types/database.types'
 
 const paymentMethods = ['Débito', 'Crédito', 'Pix', 'Dinheiro', 'Outro']
@@ -101,6 +109,10 @@ function defaultValuesFor(transaction: Tables<'transactions'> | undefined): Form
 
 export function QuickAddSheet({ open, onOpenChange, transaction }: QuickAddSheetProps) {
   const isEditing = !!transaction
+  // Sheet de baixo no celular (alcance de polegar), dialog compacto e
+  // centralizado no PC — o formulário inteiro esticado full-width numa tela
+  // grande não é ergonômico nem parece um popup de verdade.
+  const isDesktop = useMediaQuery('(min-width: 768px)')
   const { data: expenseCategories = [] } = useExpenseCategories()
   const { data: incomeCategories = [] } = useIncomeCategories()
   const { data: categoriasDespesa = [] } = useCategorias('despesa')
@@ -193,10 +205,10 @@ export function QuickAddSheet({ open, onOpenChange, transaction }: QuickAddSheet
         descricao: values.descricao,
         valor_entrada: values.tipo === 'entrada' ? values.valor : 0,
         valor_saida: values.tipo === 'saida' ? values.valor : 0,
-        expense_category_id: values.tipo === 'saida' ? values.categoryId ?? null : null,
-        income_category_id: values.tipo === 'entrada' ? values.categoryId ?? null : null,
-        categoria_id: values.categoriaId ?? null,
-        cartao_id: values.cartaoId ?? null,
+        expense_category_id: values.tipo === 'saida' ? values.categoryId || null : null,
+        income_category_id: values.tipo === 'entrada' ? values.categoryId || null : null,
+        categoria_id: values.categoriaId || null,
+        cartao_id: values.cartaoId || null,
         forma_pagamento: values.formaPagamento ?? null,
       }
       if (isEditing) {
@@ -212,13 +224,10 @@ export function QuickAddSheet({ open, onOpenChange, transaction }: QuickAddSheet
     }
   }
 
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="max-h-[90vh] overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>{isEditing ? 'Editar lançamento' : 'Novo lançamento'}</SheetTitle>
-        </SheetHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 px-4 pb-6">
+  const title = isEditing ? 'Editar lançamento' : 'Novo lançamento'
+
+  const form = (
+    <form onSubmit={handleSubmit(onSubmit)} className={cn('flex flex-col gap-4', !isDesktop && 'px-4 pb-6')}>
           <Controller
             control={control}
             name="tipo"
@@ -369,7 +378,29 @@ export function QuickAddSheet({ open, onOpenChange, transaction }: QuickAddSheet
           <SubmitButton pending={createTransaction.isPending || updateTransaction.isPending} className="mt-2">
             Salvar
           </SubmitButton>
-        </form>
+    </form>
+  )
+
+  if (isDesktop) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+          </DialogHeader>
+          {form}
+        </DialogContent>
+      </Dialog>
+    )
+  }
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="bottom" className="max-h-[90vh] overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>{title}</SheetTitle>
+        </SheetHeader>
+        {form}
       </SheetContent>
     </Sheet>
   )
