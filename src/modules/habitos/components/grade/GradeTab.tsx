@@ -55,6 +55,27 @@ export function GradeTab() {
     return map
   }, [monthLogs])
 
+  // % exibida no cabeçalho da grade — precisa ser sobre os dias DESSE mês (o
+  // que está na tela), não sobre a janela fixa de 90 dias usada pra sequência.
+  // Dias futuros dentro do mês (se for o mês atual) não contam contra a %.
+  const monthStats = useMemo(() => {
+    const map = new Map<string, { percent: number }>()
+    const todayStr = todayIso()
+    for (const habit of habits) {
+      const doneDates = doneByHabit.get(habit.id)
+      let doneCount = 0
+      let totalScheduled = 0
+      for (const day of days) {
+        if (day.date > todayStr) continue
+        if (!isHabitScheduledOn(habit, new Date(`${day.date}T00:00:00`))) continue
+        totalScheduled++
+        if (doneDates?.has(day.date)) doneCount++
+      }
+      map.set(habit.id, { percent: totalScheduled > 0 ? doneCount / totalScheduled : 0 })
+    }
+    return map
+  }, [habits, doneByHabit, days])
+
   function changeMonth(delta: number) {
     let m = viewMonth + delta
     let y = viewYear
@@ -189,7 +210,7 @@ export function GradeTab() {
           days={days}
           habits={habits}
           doneByHabit={doneByHabit}
-          stats={stats}
+          stats={monthStats}
           pendingCells={pendingCells}
           justConfirmedCells={justConfirmedCells}
           onToggleCell={handleToggleCell}

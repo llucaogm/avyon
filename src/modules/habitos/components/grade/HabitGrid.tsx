@@ -12,14 +12,13 @@ import { getHabitIcon } from '@/modules/habitos/lib/habitIcons'
 import { isHabitScheduledOn } from '@/modules/habitos/lib/habitSchedule'
 import type { GridDay } from '@/modules/habitos/lib/gridDates'
 import { cn } from '@/shared/lib/utils'
-import type { HabitStat } from '@/modules/habitos/hooks/useHabitStats'
 import type { Tables } from '@/shared/types/database.types'
 
 interface HabitGridProps {
   days: GridDay[]
   habits: Tables<'habits'>[]
   doneByHabit: Map<string, Set<string>>
-  stats: Map<string, HabitStat>
+  stats: Map<string, { percent: number }>
   pendingCells: Set<string>
   justConfirmedCells: Set<string>
   onToggleCell: (habitId: string, date: string, logged: boolean) => void
@@ -43,15 +42,15 @@ export function HabitGrid({
       <Table className="w-auto">
         <TableHeader>
           <TableRow className="hover:bg-transparent">
-            <TableHead className="bg-card sticky left-0 z-20 min-w-[180px]" />
+            <TableHead className="bg-card sticky left-0 z-20 min-w-[150px]" />
             {days.map((day) => (
               <TableHead
                 key={day.date}
-                className={cn('w-11 p-1 text-center align-bottom', day.isToday && 'bg-primary/10')}
+                className={cn('w-8 p-0.5 text-center align-bottom', day.isToday && 'bg-primary/10')}
               >
                 <div className="flex flex-col items-center gap-0.5">
-                  <span className="text-[10px] leading-none text-muted-foreground">{day.weekdayLetter}</span>
-                  <span className={cn('text-xs leading-none', day.isToday && 'text-primary font-semibold')}>
+                  <span className="text-[9px] leading-none text-muted-foreground">{day.weekdayLetter}</span>
+                  <span className={cn('text-[11px] leading-none', day.isToday && 'text-primary font-semibold')}>
                     {day.dayOfMonth}
                   </span>
                 </div>
@@ -66,7 +65,7 @@ export function HabitGrid({
             const done = doneByHabit.get(habit.id)
             return (
               <TableRow key={habit.id}>
-                <TableCell className="bg-card sticky left-0 z-10 min-w-[180px] border-r">
+                <TableCell className="bg-card sticky left-0 z-10 min-w-[150px] border-r">
                   <div className="flex items-center gap-2">
                     <span className="bg-primary/10 text-primary flex size-8 shrink-0 items-center justify-center rounded-full">
                       <Icon className="size-4" />
@@ -105,7 +104,7 @@ export function HabitGrid({
                     return (
                       <TableCell
                         key={day.date}
-                        className={cn('w-11 p-1 text-center', day.isToday && 'bg-primary/10')}
+                        className={cn('w-8 p-0.5 text-center', day.isToday && 'bg-primary/10')}
                       >
                         <span className="text-muted-foreground/25">·</span>
                       </TableCell>
@@ -118,7 +117,7 @@ export function HabitGrid({
                   return (
                     <TableCell
                       key={day.date}
-                      className={cn('w-11 p-1 text-center', day.isToday && 'bg-primary/10')}
+                      className={cn('w-8 p-0.5 text-center', day.isToday && 'bg-primary/10')}
                       title={day.date}
                     >
                       <span className="flex items-center justify-center">
@@ -129,7 +128,7 @@ export function HabitGrid({
                             checked={isDone}
                             disabled={pendingCells.has(key)}
                             onCheckedChange={(checked) => onToggleCell(habit.id, day.date, !!checked)}
-                            className="border-border data-checked:border-primary size-8 rounded-lg border-2 [&>svg]:size-4"
+                            className="border-border data-checked:border-primary size-6 rounded-md border-2 [&>svg]:size-3"
                           />
                         )}
                       </span>
