@@ -12,6 +12,7 @@ import { useSaldoGlobal } from '@/modules/financeiro/hooks/useCartoes'
 import { computeForecast } from '@/modules/financeiro/lib/forecast'
 import { formatCurrency, formatMonthLabel } from '@/shared/lib/formatters'
 import { LoadingState } from '@/shared/components/common/LoadingState'
+import { MonthDetailSheet } from '@/modules/financeiro/components/forecast/MonthDetailSheet'
 
 export default function ForecastPage() {
   const { data: expenseCategories = [], isLoading: loadingExpense } = useExpenseCategories()
@@ -43,6 +44,7 @@ export default function ForecastPage() {
   const [compraValor, setCompraValor] = useState('')
   const [compraParcelas, setCompraParcelas] = useState('1')
   const [compraMesIndex, setCompraMesIndex] = useState(0)
+  const [selectedMonthIndex, setSelectedMonthIndex] = useState<number | null>(null)
 
   const compraValorNum = Number(compraValor) || 0
   const parcelasNum = Math.max(1, Number(compraParcelas) || 1)
@@ -209,11 +211,10 @@ export default function ForecastPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Detalhe mensal</CardTitle>
-              {simulationActive && (
-                <p className="text-xs text-muted-foreground">
-                  As colunas em itálico mostram como ficaria com a compra simulada.
-                </p>
-              )}
+              <p className="text-xs text-muted-foreground">
+                Toque num mês pra ver o que compõe esse total.
+                {simulationActive && ' As colunas em itálico mostram como ficaria com a compra simulada.'}
+              </p>
             </CardHeader>
             <CardContent className="overflow-x-auto">
               <Table>
@@ -235,7 +236,11 @@ export default function ForecastPage() {
                   {forecast.map((m, i) => {
                     const sim = forecastComCompra[i]
                     return (
-                      <TableRow key={m.monthKey}>
+                      <TableRow
+                        key={m.monthKey}
+                        onClick={() => setSelectedMonthIndex(i)}
+                        className="cursor-pointer hover:bg-muted/40"
+                      >
                         <TableCell>{formatMonthLabel(m.monthDate)}</TableCell>
                         <TableCell className="text-right text-primary">
                           {formatCurrency(m.totalEntradas)}
@@ -271,6 +276,16 @@ export default function ForecastPage() {
           </Card>
         </>
       )}
+
+      <MonthDetailSheet
+        month={selectedMonthIndex !== null ? forecast[selectedMonthIndex] : null}
+        onOpenChange={(v) => !v && setSelectedMonthIndex(null)}
+        isCurrentMonth={selectedMonthIndex === 0}
+        currentMonthTransactions={currentMonthTransactions}
+        expenseCategories={expenseCategories}
+        incomeCategories={incomeCategories}
+        extraSaida={selectedMonthIndex !== null ? extraSaidas?.[selectedMonthIndex] : undefined}
+      />
     </div>
   )
 }

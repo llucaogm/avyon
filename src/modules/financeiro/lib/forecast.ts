@@ -47,6 +47,16 @@ function isChargedInMonth(category: ExpenseCategory, monthDate: Date): boolean {
   }
 }
 
+/** Exposta pro drill-down do "Detalhe mensal" — mesmo filtro usado internamente
+ * pra somar totalSaidas, aqui devolvendo a lista em vez do total, pra mostrar
+ * quais Gastos Fixos compõem a projeção daquele mês. */
+export function expenseCategoriesForMonth(
+  expenseCategories: ExpenseCategory[],
+  monthDate: Date,
+): ExpenseCategory[] {
+  return expenseCategories.filter((c) => isChargedInMonth(c, monthDate))
+}
+
 /**
  * Projects cash flow for the next `monthsAhead` months, replacing the spreadsheet's
  * manually-cascaded "Projeção Futura" sheet with a pure computation over the current
