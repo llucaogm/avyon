@@ -41,8 +41,6 @@ import { SubmitButton } from '@/shared/components/common/SubmitButton'
 import { cn } from '@/shared/lib/utils'
 import type { Tables } from '@/shared/types/database.types'
 
-const paymentMethods = ['Débito', 'Crédito', 'Pix', 'Dinheiro', 'Outro']
-
 // Lido dentro do superRefine via ref (não pelo valor do form) — se existir ao
 // menos 1 cartão de débito cadastrado, toda receita nova passa a exigir cartão,
 // pra ficar rastreável. Sem cartões de débito ainda, o campo continua opcional.
@@ -57,7 +55,6 @@ const schema = z
     categoriaId: z.string().optional(),
     cartaoId: z.string().optional(),
     data: z.string().min(1),
-    formaPagamento: z.string().optional(),
   })
   .superRefine((values, ctx) => {
     if (!values.categoriaId) {
@@ -91,7 +88,6 @@ function defaultValuesFor(transaction: Tables<'transactions'> | undefined): Form
       categoriaId: undefined,
       cartaoId: undefined,
       data: todayIso(),
-      formaPagamento: undefined,
     }
   }
   const isEntrada = transaction.valor_entrada > 0
@@ -103,7 +99,6 @@ function defaultValuesFor(transaction: Tables<'transactions'> | undefined): Form
     categoriaId: transaction.categoria_id ?? undefined,
     cartaoId: transaction.cartao_id ?? undefined,
     data: transaction.data,
-    formaPagamento: transaction.forma_pagamento ?? undefined,
   }
 }
 
@@ -209,7 +204,6 @@ export function QuickAddSheet({ open, onOpenChange, transaction }: QuickAddSheet
         income_category_id: values.tipo === 'entrada' ? values.categoryId || null : null,
         categoria_id: values.categoriaId || null,
         cartao_id: values.cartaoId || null,
-        forma_pagamento: values.formaPagamento ?? null,
       }
       if (isEditing) {
         await updateTransaction.mutateAsync({ id: transaction.id, values: payload })
@@ -352,27 +346,6 @@ export function QuickAddSheet({ open, onOpenChange, transaction }: QuickAddSheet
 
           <FormField label="Data" htmlFor="data">
             <Input id="data" type="date" {...register('data')} />
-          </FormField>
-
-          <FormField label="Forma de pagamento">
-            <Controller
-              control={control}
-              name="formaPagamento"
-              render={({ field }) => (
-                <ToggleGroup
-                  type="single"
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  className="flex-wrap justify-start"
-                >
-                  {paymentMethods.map((m) => (
-                    <ToggleGroupItem key={m} value={m}>
-                      {m}
-                    </ToggleGroupItem>
-                  ))}
-                </ToggleGroup>
-              )}
-            />
           </FormField>
 
           <SubmitButton pending={createTransaction.isPending || updateTransaction.isPending} className="mt-2">
