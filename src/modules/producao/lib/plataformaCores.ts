@@ -66,16 +66,21 @@ export const APROVACAO_LABELS: Record<PostAprovacao, string> = {
   reprovado: 'Reprovado',
 }
 
-/** Classes Tailwind (não CSS var) porque aqui é fundo/borda de card inteiro,
- * não um pontinho — precisa das variantes claro/escuro do próprio Tailwind. */
+/** Avyon é dark-only (nunca ativa a classe .dark — ver index.css), então
+ * `dark:` aqui nunca rodaria. Nada de fundo pastel claro (ilegível contra o
+ * resto da UI escura): tom saturado em baixa opacidade sobre o --card quase
+ * preto mantém o texto (text-foreground/text-muted-foreground) do jeito que
+ * sempre foi, só com uma borda de destaque na cor do status. */
 export const APROVACAO_CARD_CLASSES: Record<PostAprovacao, string> = {
-  esperando: 'bg-amber-50/70 ring-amber-200/60 dark:bg-amber-950/20 dark:ring-amber-900/40',
-  aprovado: 'bg-green-50 ring-green-300/60 dark:bg-green-950/30 dark:ring-green-900/50',
-  reprovado: 'bg-red-50 ring-red-300/60 dark:bg-red-950/30 dark:ring-red-900/50',
+  esperando: 'border-l-4 border-l-amber-400 bg-amber-400/10 ring-amber-400/20',
+  aprovado: 'border-l-4 border-l-green-500 bg-green-500/10 ring-green-500/20',
+  reprovado: 'border-l-4 border-l-red-500 bg-red-500/10 ring-red-500/20',
 }
 
+/** Badge/select do status — fundo sólido e saturado, com o texto na cor que
+ * garante contraste em cada caso (preto no amarelo, branco no verde/vermelho). */
 export const APROVACAO_TRIGGER_CLASSES: Record<PostAprovacao, string> = {
-  esperando: 'border-amber-300 text-amber-800 dark:border-amber-800 dark:text-amber-300',
-  aprovado: 'border-green-400 text-green-800 dark:border-green-700 dark:text-green-300',
-  reprovado: 'border-red-400 text-red-800 dark:border-red-700 dark:text-red-300',
+  esperando: 'border-transparent bg-amber-400 text-black',
+  aprovado: 'border-transparent bg-green-500 text-white',
+  reprovado: 'border-transparent bg-red-500 text-white',
 }
