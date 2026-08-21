@@ -1,39 +1,29 @@
-import { format, isSameDay, subDays } from 'date-fns'
-import { HABIT_LOG_WINDOW_DAYS } from '@/modules/habitos/hooks/useHabitLogs'
+import { format, isSameDay } from 'date-fns'
 
 const WEEKDAY_LETTERS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
-const MONTH_ABBREV = [
-  'jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez',
-]
 
 export interface GridDay {
   date: string
   dayOfMonth: number
   weekdayLetter: string
-  monthLabel: string | null
   isToday: boolean
 }
 
-/**
- * Flat, oldest-to-newest day list for the habit grid — no week-block padding,
- * since the header no longer groups by calendar week (see HabitGrid). Each day
- * carries a weekday initial (rhythm — did I skip the weekend) and a month label
- * that's only set on the 1st of a month or the very first rendered day, so the
- * header can anchor the calendar without repeating a month name every column.
- */
-export function buildHabitGridDays(windowDays = HABIT_LOG_WINDOW_DAYS): GridDay[] {
+/** Dias 1..N do mês informado — o mês em si já fica no cabeçalho de
+ * navegação (ver GradeTab), então cada coluna só precisa do dia e da letra
+ * do dia da semana. */
+export function buildMonthGridDays(year: number, month: number): GridDay[] {
   const today = new Date()
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
   const days: GridDay[] = []
 
-  for (let i = 0; i < windowDays; i++) {
-    const d = subDays(today, windowDays - 1 - i)
-    const dayOfMonth = d.getDate()
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(year, month, d)
     days.push({
-      date: format(d, 'yyyy-MM-dd'),
-      dayOfMonth,
-      weekdayLetter: WEEKDAY_LETTERS[d.getDay()],
-      monthLabel: dayOfMonth === 1 || i === 0 ? MONTH_ABBREV[d.getMonth()] : null,
-      isToday: isSameDay(d, today),
+      date: format(date, 'yyyy-MM-dd'),
+      dayOfMonth: d,
+      weekdayLetter: WEEKDAY_LETTERS[date.getDay()],
+      isToday: isSameDay(date, today),
     })
   }
 

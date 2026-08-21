@@ -1,29 +1,41 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { Settings } from 'lucide-react'
+import { useMemo, useRef, useState } from 'react'
+import { Settings, ChevronLeft, ChevronRight } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
 import { Progress } from '@/shared/components/ui/progress'
 import { LoadingState } from '@/shared/components/common/LoadingState'
 import { EmptyState } from '@/shared/components/common/EmptyState'
 import { useHabits, useDeactivateHabit } from '@/modules/habitos/hooks/useHabits'
-import { useHabitLogs, useToggleHabitLog } from '@/modules/habitos/hooks/useHabitLogs'
+import { useHabitLogs, useHabitLogsForMonth, useToggleHabitLog } from '@/modules/habitos/hooks/useHabitLogs'
 import { useHabitStats } from '@/modules/habitos/hooks/useHabitStats'
 import { HabitGrid } from '@/modules/habitos/components/grade/HabitGrid'
 import { HabitsManageSheet } from '@/modules/habitos/components/grade/HabitsManageSheet'
 import { HabitFormDialog } from '@/modules/habitos/components/HabitFormDialog'
 import { isHabitScheduledOn } from '@/modules/habitos/lib/habitSchedule'
+import { buildMonthGridDays } from '@/modules/habitos/lib/gridDates'
 import { todayIso } from '@/modules/habitos/lib/dateUtils'
 import { getErrorMessage } from '@/shared/lib/errors'
+import { formatMonthLabel } from '@/shared/lib/formatters'
 import type { Tables } from '@/shared/types/database.types'
 
 const MILESTONES = [7, 30, 100]
 
 export function GradeTab() {
+  const now = new Date()
+  const [viewYear, setViewYear] = useState(now.getFullYear())
+  const [viewMonth, setViewMonth] = useState(now.getMonth())
+  const isCurrentMonth = viewYear === now.getFullYear() && viewMonth === now.getMonth()
+
   const { data: habits = [], isLoading: loadingHabits } = useHabits()
-  const { data: logs = [], isLoading: loadingLogs } = useHabitLogs()
+  // Janela fixa de 90 dias pra sequência/porcentagem (sempre relativa a hoje),
+  // separada dos logs do mês em exibição (que podem estar fora dessa janela).
+  const { data: statsLogs = [], isLoading: loadingStatsLogs } = useHabitLogs()
+  const { data: monthLogs = [], isLoading: loadingMonthLogs } = useHabitLogsForMonth(
+    new Date(viewYear, viewMonth, 1),
+  )
   const toggleLog = useToggleHabitLog()
   const deactivateHabit = useDeactivateHabit()
-  const stats = useHabitStats(habits, logs)
+  const stats = useHabitStats(habits, statsLogs)
 
   const [justConfirmedCells, setJustConfirmedCells] = useState<Set<string>>(new Set())
   const [pendingCells, setPendingCells] = useState<Set<string>>(new Set())
@@ -31,36 +43,47 @@ export function GradeTab() {
   const [editingHabit, setEditingHabit] = useState<Tables<'habits'> | undefined>()
   const [formOpen, setFormOpen] = useState(false)
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>())
-  const scrollRef = useRef<HTMLDivElement>(null)
+
+  const days = useMemo(() => buildMonthGridDays(viewYear, viewMonth), [viewYear, viewMonth])
 
   const doneByHabit = useMemo(() => {
     const map = new Map<string, Set<string>>()
-    for (const log of logs) {
+    for (const log of monthLogs) {
       if (!map.has(log.habit_id)) map.set(log.habit_id, new Set())
       map.get(log.habit_id)!.add(log.data)
     }
     return map
-  }, [logs])
+  }, [monthLogs])
+
+  function changeMonth(delta: number) {
+    let m = viewMonth + delta
+    let y = viewYear
+    if (m < 0) {
+      m = 11
+      y -= 1
+    } else if (m > 11) {
+      m = 0
+      y += 1
+    }
+    setViewMonth(m)
+    setViewYear(y)
+  }
 
   const today = todayIso()
   const todaysHabits = useMemo(() => habits.filter((h) => isHabitScheduledOn(h, new Date())), [habits])
+  // Vem da janela fixa (statsLogs), não da grade — "hábitos hoje" precisa continuar
+  // certo mesmo navegando pra um mês diferente do atual, que não tem o log de hoje.
+  const doneTodaySet = useMemo(
+    () => new Set(statsLogs.filter((l) => l.data === today).map((l) => l.habit_id)),
+    [statsLogs, today],
+  )
   const doneToday = useMemo(
-    () => todaysHabits.filter((h) => doneByHabit.get(h.id)?.has(today)).length,
-    [todaysHabits, doneByHabit, today],
+    () => todaysHabits.filter((h) => doneTodaySet.has(h.id)).length,
+    [todaysHabits, doneTodaySet],
   )
   const progresso = todaysHabits.length > 0 ? doneToday / todaysHabits.length : 0
 
-  const isLoading = loadingHabits || loadingLogs
-
-  // Open already scrolled to today — the window always ends today, so without this
-  // the grid would start showing the oldest (least relevant) days. Depends on the
-  // combined isLoading (not just loadingLogs) so it fires once the grid has actually
-  // mounted, regardless of which of the two queries happens to settle last.
-  useEffect(() => {
-    if (!isLoading && scrollRef.current) {
-      scrollRef.current.scrollLeft = scrollRef.current.scrollWidth
-    }
-  }, [isLoading])
+  const isLoading = loadingHabits || loadingStatsLogs || loadingMonthLogs
 
   function playConfirmMoment(key: string) {
     setJustConfirmedCells((prev) => new Set(prev).add(key))
@@ -137,6 +160,24 @@ export function GradeTab() {
         </Button>
       </div>
 
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" size="icon-sm" onClick={() => changeMonth(-1)} aria-label="Mês anterior">
+          <ChevronLeft className="size-4" />
+        </Button>
+        <span className="font-display text-sm font-semibold">
+          {formatMonthLabel(new Date(viewYear, viewMonth, 1))}
+        </span>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={() => changeMonth(1)}
+          disabled={isCurrentMonth}
+          aria-label="Próximo mês"
+        >
+          <ChevronRight className="size-4" />
+        </Button>
+      </div>
+
       {isLoading && <LoadingState />}
 
       {!isLoading && habits.length === 0 && (
@@ -145,7 +186,7 @@ export function GradeTab() {
 
       {!isLoading && habits.length > 0 && (
         <HabitGrid
-          ref={scrollRef}
+          days={days}
           habits={habits}
           doneByHabit={doneByHabit}
           stats={stats}

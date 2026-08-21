@@ -1,4 +1,3 @@
-import { forwardRef } from 'react'
 import { MoreVertical, Pencil, Trash2 } from 'lucide-react'
 import { Checkbox } from '@/shared/components/ui/checkbox'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/components/ui/table'
@@ -11,12 +10,13 @@ import {
 import { ConfirmCheck } from '@/shared/components/common/ConfirmCheck'
 import { getHabitIcon } from '@/modules/habitos/lib/habitIcons'
 import { isHabitScheduledOn } from '@/modules/habitos/lib/habitSchedule'
-import { buildHabitGridDays } from '@/modules/habitos/lib/gridDates'
+import type { GridDay } from '@/modules/habitos/lib/gridDates'
 import { cn } from '@/shared/lib/utils'
 import type { HabitStat } from '@/modules/habitos/hooks/useHabitStats'
 import type { Tables } from '@/shared/types/database.types'
 
 interface HabitGridProps {
+  days: GridDay[]
   habits: Tables<'habits'>[]
   doneByHabit: Map<string, Set<string>>
   stats: Map<string, HabitStat>
@@ -27,15 +27,20 @@ interface HabitGridProps {
   onDeleteHabit: (habitId: string) => void
 }
 
-export const HabitGrid = forwardRef<HTMLDivElement, HabitGridProps>(function HabitGrid(
-  { habits, doneByHabit, stats, pendingCells, justConfirmedCells, onToggleCell, onEditHabit, onDeleteHabit },
-  scrollRef,
-) {
-  const days = buildHabitGridDays()
-
+export function HabitGrid({
+  days,
+  habits,
+  doneByHabit,
+  stats,
+  pendingCells,
+  justConfirmedCells,
+  onToggleCell,
+  onEditHabit,
+  onDeleteHabit,
+}: HabitGridProps) {
   return (
-    <div className="rounded-md border">
-      <Table className="w-auto" containerRef={scrollRef}>
+    <div className="w-fit max-w-full rounded-md border">
+      <Table className="w-auto">
         <TableHeader>
           <TableRow className="hover:bg-transparent">
             <TableHead className="bg-card sticky left-0 z-20 min-w-[180px]" />
@@ -45,9 +50,6 @@ export const HabitGrid = forwardRef<HTMLDivElement, HabitGridProps>(function Hab
                 className={cn('w-11 p-1 text-center align-bottom', day.isToday && 'bg-primary/10')}
               >
                 <div className="flex flex-col items-center gap-0.5">
-                  <span className="h-3 text-[9px] leading-none text-muted-foreground">
-                    {day.monthLabel ?? ''}
-                  </span>
                   <span className="text-[10px] leading-none text-muted-foreground">{day.weekdayLetter}</span>
                   <span className={cn('text-xs leading-none', day.isToday && 'text-primary font-semibold')}>
                     {day.dayOfMonth}
@@ -141,4 +143,4 @@ export const HabitGrid = forwardRef<HTMLDivElement, HabitGridProps>(function Hab
       </Table>
     </div>
   )
-})
+}
