@@ -169,7 +169,12 @@ export default function CalendarioPage() {
         {visiblePosts.map((post, index) => (
           <Card
             key={post.id}
-            className="animate-fade-in-up"
+            className={cn(
+              'animate-fade-in-up',
+              post.aprovado
+                ? 'bg-green-50 ring-green-300/60 dark:bg-green-950/30 dark:ring-green-900/50'
+                : 'bg-amber-50/70 ring-amber-200/60 dark:bg-amber-950/20 dark:ring-amber-900/40',
+            )}
             style={{ '--stagger-index': Math.min(index, 6) } as CSSProperties}
           >
             <CardContent className="flex flex-col gap-2 py-3">
@@ -202,6 +207,31 @@ export default function CalendarioPage() {
                         {STATUS_LABELS[s]}
                       </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={post.aprovado ? 'sim' : 'nao'}
+                  onValueChange={(v) =>
+                    updatePost.mutate(
+                      { id: post.id, values: { aprovado: v === 'sim' } },
+                      { onError: () => toast.error('Não consegui atualizar a aprovação') },
+                    )
+                  }
+                >
+                  <SelectTrigger
+                    size="sm"
+                    className={cn(
+                      'h-6 rounded-full px-2 text-[10px] font-medium',
+                      post.aprovado
+                        ? 'border-green-400 text-green-800 dark:border-green-700 dark:text-green-300'
+                        : 'border-amber-300 text-amber-800 dark:border-amber-800 dark:text-amber-300',
+                    )}
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="nao">Esperando aprovação</SelectItem>
+                    <SelectItem value="sim">Aprovado</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

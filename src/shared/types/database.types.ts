@@ -795,6 +795,7 @@ export type Database = {
       }
       posts: {
         Row: {
+          aprovado: boolean
           created_at: string
           data_publicacao: string | null
           id: string
@@ -808,6 +809,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          aprovado?: boolean
           created_at?: string
           data_publicacao?: string | null
           id?: string
@@ -821,6 +823,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          aprovado?: boolean
           created_at?: string
           data_publicacao?: string | null
           id?: string

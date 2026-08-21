@@ -38,6 +38,7 @@ const schema = z.object({
   plataforma: z.enum(['instagram', 'tiktok', 'youtube', 'linkedin', 'outro']),
   tipo: z.enum(['estatico', 'carrossel', 'reels', 'video', 'stories']),
   status: z.enum(['ideia', 'roteiro', 'gravacao', 'edicao', 'agendado', 'publicado']),
+  aprovado: z.boolean(),
   data_publicacao: z.string().optional(),
   legenda: z.string().optional(),
 })
@@ -59,6 +60,7 @@ function defaultValuesFor(post: Tables<'posts'> | undefined, defaultData?: strin
       plataforma: 'instagram',
       tipo: 'reels',
       status: 'ideia',
+      aprovado: false,
       data_publicacao: defaultData ?? '',
       legenda: '',
     }
@@ -68,6 +70,7 @@ function defaultValuesFor(post: Tables<'posts'> | undefined, defaultData?: strin
     plataforma: post.plataforma,
     tipo: post.tipo,
     status: post.status,
+    aprovado: post.aprovado,
     data_publicacao: post.data_publicacao ?? '',
     legenda: post.legenda ?? '',
   }
@@ -94,6 +97,7 @@ export function PostFormDialog({ open, onOpenChange, post, defaultData }: PostFo
         plataforma: values.plataforma,
         tipo: values.tipo,
         status: values.status,
+        aprovado: values.aprovado,
         data_publicacao: values.data_publicacao || null,
         legenda: values.legenda || null,
       }
@@ -193,6 +197,24 @@ export function PostFormDialog({ open, onOpenChange, post, defaultData }: PostFo
               <Input id="data_publicacao" type="date" {...register('data_publicacao')} />
             </FormField>
           </div>
+
+          <FormField label="Aprovação" htmlFor="aprovado">
+            <Controller
+              control={control}
+              name="aprovado"
+              render={({ field }) => (
+                <Select value={field.value ? 'sim' : 'nao'} onValueChange={(v) => field.onChange(v === 'sim')}>
+                  <SelectTrigger id="aprovado" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="nao">Esperando aprovação</SelectItem>
+                    <SelectItem value="sim">Aprovado</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+          </FormField>
 
           <FormField label="Legenda (opcional)" htmlFor="legenda">
             <Textarea id="legenda" rows={3} placeholder="Legenda ou observações do post..." {...register('legenda')} />
