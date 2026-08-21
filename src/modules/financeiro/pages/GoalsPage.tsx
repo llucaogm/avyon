@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
+import { DatePicker } from '@/shared/components/common/DatePicker'
 import { Progress } from '@/shared/components/ui/progress'
 import { FormField } from '@/shared/components/common/FormField'
 import { SubmitButton } from '@/shared/components/common/SubmitButton'
@@ -258,7 +259,7 @@ function ContributionDialog({
             <Input id="valor" type="number" step="0.01" value={valor} onChange={(e) => setValor(e.target.value)} />
           </FormField>
           <FormField label="Data" htmlFor="data">
-            <Input id="data" type="date" value={data} onChange={(e) => setData(e.target.value)} />
+            <DatePicker id="data" value={data} onChange={setData} />
           </FormField>
         </div>
         <DialogFooter>

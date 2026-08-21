@@ -11,6 +11,7 @@ import {
   DialogFooter,
 } from '@/shared/components/ui/dialog'
 import { Input } from '@/shared/components/ui/input'
+import { DatePicker } from '@/shared/components/common/DatePicker'
 import {
   Select,
   SelectContent,
@@ -310,7 +311,11 @@ export function ExpenseCategoryDialog({
 
           {frequencia === 'unico' && (
             <FormField label="Data da cobrança" htmlFor="charge_date">
-              <Input id="charge_date" type="date" {...register('charge_date')} />
+              <Controller
+                control={control}
+                name="charge_date"
+                render={({ field }) => <DatePicker id="charge_date" value={field.value} onChange={field.onChange} clearable />}
+              />
             </FormField>
           )}
 
@@ -321,7 +326,11 @@ export function ExpenseCategoryDialog({
           )}
 
           <FormField label="Termina em (opcional)" htmlFor="end_date">
-            <Input id="end_date" type="date" {...register('end_date')} />
+            <Controller
+              control={control}
+              name="end_date"
+              render={({ field }) => <DatePicker id="end_date" value={field.value} onChange={field.onChange} clearable />}
+            />
           </FormField>
 
           <FormField label="Observação" htmlFor="observacao">

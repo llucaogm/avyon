@@ -11,6 +11,7 @@ import {
   DialogFooter,
 } from '@/shared/components/ui/dialog'
 import { Input } from '@/shared/components/ui/input'
+import { DatePicker } from '@/shared/components/common/DatePicker'
 import {
   Select,
   SelectContent,
@@ -123,7 +124,11 @@ export function PagarFaturaDialog({ open, onOpenChange, cartaoCredito }: PagarFa
           </FormField>
 
           <FormField label="Data" htmlFor="data">
-            <Input id="data" type="date" {...register('data')} />
+            <Controller
+              control={control}
+              name="data"
+              render={({ field }) => <DatePicker id="data" value={field.value} onChange={field.onChange} />}
+            />
           </FormField>
 
           <DialogFooter>

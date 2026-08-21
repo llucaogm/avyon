@@ -12,7 +12,7 @@ import {
 } from '@/shared/components/ui/select'
 import { usePosts, useUpdatePost, useDeletePost } from '@/modules/producao/hooks/usePosts'
 import { PostFormDialog } from '@/modules/producao/components/producao/PostFormDialog'
-import { monthMatrix, isoDate, MONTHS, WEEKDAYS } from '@/modules/producao/lib/calendarGrid'
+import { monthMatrix, isoDate, MONTHS, WEEKDAYS } from '@/shared/lib/calendarGrid'
 import {
   PLATAFORMA_CORES,
   PLATAFORMA_LABELS,

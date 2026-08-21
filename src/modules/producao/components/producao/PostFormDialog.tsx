@@ -11,6 +11,7 @@ import {
   DialogFooter,
 } from '@/shared/components/ui/dialog'
 import { Input } from '@/shared/components/ui/input'
+import { DatePicker } from '@/shared/components/common/DatePicker'
 import { Textarea } from '@/shared/components/ui/textarea'
 import {
   Select,
@@ -196,7 +197,13 @@ export function PostFormDialog({ open, onOpenChange, post, defaultData }: PostFo
             </FormField>
 
             <FormField label="Data (opcional)" htmlFor="data_publicacao">
-              <Input id="data_publicacao" type="date" {...register('data_publicacao')} />
+              <Controller
+                control={control}
+                name="data_publicacao"
+                render={({ field }) => (
+                  <DatePicker id="data_publicacao" value={field.value} onChange={field.onChange} clearable />
+                )}
+              />
             </FormField>
           </div>
 

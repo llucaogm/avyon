@@ -5,6 +5,7 @@ import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianG
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
+import { DatePicker } from '@/shared/components/common/DatePicker'
 import { Progress } from '@/shared/components/ui/progress'
 import { FormField } from '@/shared/components/common/FormField'
 import { SubmitButton } from '@/shared/components/common/SubmitButton'
@@ -216,7 +217,7 @@ function ContributionDialog({ open, onOpenChange }: { open: boolean; onOpenChang
         </DialogHeader>
         <div className="flex flex-col gap-4">
           <FormField label="Mês" htmlFor="mes">
-            <Input id="mes" type="date" value={mes} onChange={(e) => setMes(e.target.value)} />
+            <DatePicker id="mes" value={mes} onChange={setMes} />
           </FormField>
           <FormField label="Valor do aporte (R$)" htmlFor="aporte">
             <Input id="aporte" type="number" step="0.01" value={aporte} onChange={(e) => setAporte(e.target.value)} />

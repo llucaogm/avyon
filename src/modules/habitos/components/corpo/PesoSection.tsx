@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Input } from '@/shared/components/ui/input'
+import { DatePicker } from '@/shared/components/common/DatePicker'
 import { FormField } from '@/shared/components/common/FormField'
 import { SubmitButton } from '@/shared/components/common/SubmitButton'
 import { usePesoLogs, useAddPesoLog } from '@/modules/habitos/hooks/usePeso'
@@ -67,7 +68,7 @@ export function PesoSection() {
           </div>
           <div className="flex-1">
             <FormField label="Data" htmlFor="peso-data">
-              <Input id="peso-data" type="date" value={data} onChange={(e) => setData(e.target.value)} />
+              <DatePicker id="peso-data" value={data} onChange={setData} />
             </FormField>
           </div>
           <SubmitButton pending={addLog.isPending} onClick={handleSave}>

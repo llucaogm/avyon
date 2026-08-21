@@ -17,6 +17,7 @@ import {
 } from '@/shared/components/ui/dialog'
 import { useMediaQuery } from '@/shared/hooks/useMediaQuery'
 import { Input } from '@/shared/components/ui/input'
+import { DatePicker } from '@/shared/components/common/DatePicker'
 import { ToggleGroup, ToggleGroupItem } from '@/shared/components/ui/toggle-group'
 import {
   Select,
@@ -345,7 +346,11 @@ export function QuickAddSheet({ open, onOpenChange, transaction }: QuickAddSheet
           </FormField>
 
           <FormField label="Data" htmlFor="data">
-            <Input id="data" type="date" {...register('data')} />
+            <Controller
+              control={control}
+              name="data"
+              render={({ field }) => <DatePicker id="data" value={field.value} onChange={field.onChange} />}
+            />
           </FormField>
 
           <SubmitButton pending={createTransaction.isPending || updateTransaction.isPending} className="mt-2">
