@@ -3,7 +3,6 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { useExpenseCategories, useIncomeCategories } from '@/modules/financeiro/hooks/useCategories'
 import { useCategorias } from '@/modules/financeiro/hooks/useCategorias'
 import { useCartoes } from '@/modules/financeiro/hooks/useCartoes'
 import {
@@ -26,7 +25,6 @@ const schema = z
     tipo: z.enum(['entrada', 'saida']),
     valor: z.coerce.number().positive('Informe um valor maior que zero'),
     descricao: z.string().min(1, 'Descreva o lançamento'),
-    categoryId: z.string().optional(),
     categoriaId: z.string().optional(),
     cartaoId: z.string().optional(),
     data: z.string().min(1),
@@ -53,7 +51,6 @@ function defaultValuesFor(transaction: Tables<'transactions'> | undefined): Form
       tipo: 'saida',
       valor: undefined,
       descricao: '',
-      categoryId: undefined,
       categoriaId: undefined,
       cartaoId: undefined,
       data: todayIso(),
@@ -64,7 +61,6 @@ function defaultValuesFor(transaction: Tables<'transactions'> | undefined): Form
     tipo: isEntrada ? 'entrada' : 'saida',
     valor: isEntrada ? transaction.valor_entrada : transaction.valor_saida,
     descricao: transaction.descricao,
-    categoryId: transaction.expense_category_id ?? transaction.income_category_id ?? undefined,
     categoriaId: transaction.categoria_id ?? undefined,
     cartaoId: transaction.cartao_id ?? undefined,
     data: transaction.data,
@@ -78,13 +74,10 @@ interface UseQuickAddFormArgs {
 }
 
 /** Todo o estado e regra de negócio do formulário de lançamento rápido —
- * schema, sugestão automática de categoria/cartão a partir do histórico,
- * sincronização com Gasto Fixo/Receita Fixa e o submit. QuickAddSheet fica
- * só com a apresentação (campos + wrapper responsivo). */
+ * schema, sugestão automática de categoria a partir do histórico e o submit.
+ * QuickAddSheet fica só com a apresentação (campos + wrapper responsivo). */
 export function useQuickAddForm({ open, onOpenChange, transaction }: UseQuickAddFormArgs) {
   const isEditing = !!transaction
-  const { data: expenseCategories = [] } = useExpenseCategories()
-  const { data: incomeCategories = [] } = useIncomeCategories()
   const { data: categoriasDespesa = [] } = useCategorias('despesa')
   const { data: categoriasReceita = [] } = useCategorias('receita')
   const { data: cartoesDebito = [] } = useCartoes('debito')
@@ -92,7 +85,6 @@ export function useQuickAddForm({ open, onOpenChange, transaction }: UseQuickAdd
   const { data: recentTransactions = [] } = useRecentTransactions()
   const createTransaction = useCreateTransaction()
   const updateTransaction = useUpdateTransaction()
-  const [autoSuggestedFixo, setAutoSuggestedFixo] = useState(false)
   const [autoSuggestedCategoria, setAutoSuggestedCategoria] = useState(false)
 
   const {
@@ -110,30 +102,16 @@ export function useQuickAddForm({ open, onOpenChange, transaction }: UseQuickAdd
 
   const tipo = watch('tipo')
   const descricao = watch('descricao')
-  const categoryId = watch('categoryId')
 
-  const fixoOptions = tipo === 'saida' ? expenseCategories : incomeCategories
   const categoriaOptions = tipo === 'saida' ? categoriasDespesa : categoriasReceita
-  const fixoField = tipo === 'saida' ? 'expense_category_id' : 'income_category_id'
   // Crédito só entra como opção em saídas — ele nunca recebe lançamento manual
   // de entrada, só via "Pagar fatura" em Cartões.
   const cartaoOptions = tipo === 'saida' ? [...cartoesDebito, ...cartoesCredito] : cartoesDebito
   requireCartaoEmEntradaRef.current = cartoesDebito.length > 0
 
-  const fixoSuggestion = useMemo(() => {
-    return suggestCategory(descricao, recentTransactions, fixoField)
-  }, [descricao, recentTransactions, fixoField])
-
   const categoriaSuggestion = useMemo(() => {
     return suggestCategory(descricao, recentTransactions, 'categoria_id')
   }, [descricao, recentTransactions])
-
-  useEffect(() => {
-    if (fixoSuggestion && !autoSuggestedFixo) {
-      setValue('categoryId', fixoSuggestion)
-      setAutoSuggestedFixo(true)
-    }
-  }, [fixoSuggestion, autoSuggestedFixo, setValue])
 
   useEffect(() => {
     if (categoriaSuggestion && !autoSuggestedCategoria) {
@@ -142,28 +120,12 @@ export function useQuickAddForm({ open, onOpenChange, transaction }: UseQuickAdd
     }
   }, [categoriaSuggestion, autoSuggestedCategoria, setValue])
 
-  // A Gasto Fixo/Receita Fixa can carry its own default Categoria e Cartão —
-  // applying eles quando um é escolhido evita re-selecionar todo mês. Só pra
-  // lançamentos novos: editando, o que já está salvo na transação venceu e não
-  // pode ser trocado por baixo dos panos só porque o Gasto Fixo mudou depois.
-  useEffect(() => {
-    if (isEditing || !categoryId) return
-    const fixo = fixoOptions.find((c) => c.id === categoryId)
-    if (fixo?.categoria_id) {
-      setValue('categoriaId', fixo.categoria_id)
-    }
-    if (fixo?.cartao_id) {
-      setValue('cartaoId', fixo.cartao_id)
-    }
-  }, [categoryId, fixoOptions, isEditing, setValue])
-
   // Reset (not clear) on open — loads the transaction being edited, or blank
   // defaults for a new one. Auto-suggest is pre-armed as "already suggested"
   // when editing, so it never overwrites the categorization already saved.
   useEffect(() => {
     if (open) {
       reset(defaultValuesFor(transaction))
-      setAutoSuggestedFixo(isEditing)
       setAutoSuggestedCategoria(isEditing)
     }
   }, [open, transaction, isEditing, reset])
@@ -172,10 +134,8 @@ export function useQuickAddForm({ open, onOpenChange, transaction }: UseQuickAdd
   // sentido pro tipo anterior e rearma a auto-sugestão pro novo.
   function handleTipoChange(value: string) {
     setValue('tipo', value as FormInput['tipo'])
-    setValue('categoryId', undefined)
     setValue('categoriaId', undefined)
     setValue('cartaoId', undefined)
-    setAutoSuggestedFixo(false)
     setAutoSuggestedCategoria(false)
   }
 
@@ -186,8 +146,6 @@ export function useQuickAddForm({ open, onOpenChange, transaction }: UseQuickAdd
         descricao: values.descricao,
         valor_entrada: values.tipo === 'entrada' ? values.valor : 0,
         valor_saida: values.tipo === 'saida' ? values.valor : 0,
-        expense_category_id: values.tipo === 'saida' ? values.categoryId || null : null,
-        income_category_id: values.tipo === 'entrada' ? values.categoryId || null : null,
         categoria_id: values.categoriaId || null,
         cartao_id: values.cartaoId || null,
       }
@@ -209,8 +167,6 @@ export function useQuickAddForm({ open, onOpenChange, transaction }: UseQuickAdd
     handleSubmit,
     control,
     errors,
-    tipo,
-    fixoOptions,
     categoriaOptions,
     cartaoOptions,
     categoriaSuggestion,

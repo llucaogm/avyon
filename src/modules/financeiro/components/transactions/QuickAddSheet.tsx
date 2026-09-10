@@ -45,8 +45,6 @@ export function QuickAddSheet({ open, onOpenChange, transaction }: QuickAddSheet
     handleSubmit,
     control,
     errors,
-    tipo,
-    fixoOptions,
     categoriaOptions,
     cartaoOptions,
     categoriaSuggestion,
@@ -128,27 +126,6 @@ export function QuickAddSheet({ open, onOpenChange, transaction }: QuickAddSheet
                     <span className="mr-1 inline-block size-2.5 rounded-full" style={{ backgroundColor: c.cor }} />
                     {c.nome}
                     <span className="text-muted-foreground"> · {c.tipo === 'credito' ? 'Crédito' : 'Débito'}</span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        />
-      </FormField>
-
-      <FormField label={tipo === 'saida' ? 'Gasto Fixo (opcional)' : 'Receita Fixa (opcional)'} htmlFor="categoryId">
-        <Controller
-          control={control}
-          name="categoryId"
-          render={({ field }) => (
-            <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger id="categoryId" className="w-full">
-                <SelectValue placeholder={tipo === 'saida' ? 'Nenhum' : 'Nenhuma'} />
-              </SelectTrigger>
-              <SelectContent>
-                {fixoOptions.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.nome}
                   </SelectItem>
                 ))}
               </SelectContent>
