@@ -2,6 +2,7 @@ import { useMemo, useState, type CSSProperties } from 'react'
 import { Plus, Pencil, Trash2, Receipt } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/shared/components/ui/button'
+import { TiltCard } from '@/shared/components/ui/tilt-card'
 import { useCartoes, useCartaoTransacoes, useDeleteCartao } from '@/modules/financeiro/hooks/useCartoes'
 import { computeCartaoSaldo } from '@/modules/financeiro/lib/cartaoSaldo'
 import { CartaoFormDialog } from '@/modules/financeiro/components/cartoes/CartaoFormDialog'
@@ -74,7 +75,9 @@ export default function CartoesPage() {
               className="animate-fade-in-up flex flex-col gap-2"
               style={{ '--stagger-index': index } as CSSProperties}
             >
-              <CartaoVisual cartao={c} />
+              <TiltCard effect="gravitate" className="rounded-2xl">
+                <CartaoVisual cartao={c} />
+              </TiltCard>
               <div className="flex items-center justify-between px-1">
                 <div>
                   <p className="text-xs text-muted-foreground">Saldo</p>
@@ -121,7 +124,9 @@ export default function CartoesPage() {
               className="animate-fade-in-up flex flex-col gap-2"
               style={{ '--stagger-index': index } as CSSProperties}
             >
-              <CartaoVisual cartao={c} />
+              <TiltCard effect="gravitate" className="rounded-2xl">
+                <CartaoVisual cartao={c} />
+              </TiltCard>
               <div className="flex items-center justify-between px-1">
                 <div>
                   <p className="text-xs text-muted-foreground">Disponível de {formatCurrency(c.limite ?? 0)}</p>
