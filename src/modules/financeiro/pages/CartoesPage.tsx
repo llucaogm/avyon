@@ -72,7 +72,7 @@ export default function CartoesPage() {
           {debitos.map((c, index) => (
             <div
               key={c.id}
-              className="animate-fade-in-up flex flex-col gap-2"
+              className="animate-fade-in-up flex max-w-[260px] flex-col gap-2"
               style={{ '--stagger-index': index } as CSSProperties}
             >
               <TiltCard effect="gravitate" className="rounded-2xl">
@@ -121,7 +121,7 @@ export default function CartoesPage() {
           {creditos.map((c, index) => (
             <div
               key={c.id}
-              className="animate-fade-in-up flex flex-col gap-2"
+              className="animate-fade-in-up flex max-w-[260px] flex-col gap-2"
               style={{ '--stagger-index': index } as CSSProperties}
             >
               <TiltCard effect="gravitate" className="rounded-2xl">
