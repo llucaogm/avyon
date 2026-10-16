@@ -4,7 +4,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { useCategorias } from '@/modules/financeiro/hooks/useCategorias'
-import { useCartoes } from '@/modules/financeiro/hooks/useCartoes'
 import {
   useCreateTransaction,
   useUpdateTransaction,
@@ -15,30 +14,17 @@ import { todayIso } from '@/modules/financeiro/lib/monthUtils'
 import { getErrorMessage } from '@/shared/lib/errors'
 import type { Tables } from '@/shared/types/database.types'
 
-// Lido dentro do superRefine via ref (não pelo valor do form) — se existir ao
-// menos 1 cartão de débito cadastrado, toda receita nova passa a exigir cartão,
-// pra ficar rastreável. Sem cartões de débito ainda, o campo continua opcional.
-const requireCartaoEmEntradaRef = { current: false }
-
 const schema = z
   .object({
     tipo: z.enum(['entrada', 'saida']),
     valor: z.coerce.number().positive('Informe um valor maior que zero'),
     descricao: z.string().min(1, 'Descreva o lançamento'),
     categoriaId: z.string().optional(),
-    cartaoId: z.string().optional(),
     data: z.string().min(1),
   })
   .superRefine((values, ctx) => {
     if (!values.categoriaId) {
       ctx.addIssue({ path: ['categoriaId'], code: z.ZodIssueCode.custom, message: 'Selecione uma categoria' })
-    }
-    if (requireCartaoEmEntradaRef.current && values.tipo === 'entrada' && !values.cartaoId) {
-      ctx.addIssue({
-        path: ['cartaoId'],
-        code: z.ZodIssueCode.custom,
-        message: 'Selecione onde esse dinheiro está entrando',
-      })
     }
   })
 
@@ -52,7 +38,6 @@ function defaultValuesFor(transaction: Tables<'transactions'> | undefined): Form
       valor: undefined,
       descricao: '',
       categoriaId: undefined,
-      cartaoId: undefined,
       data: todayIso(),
     }
   }
@@ -62,7 +47,6 @@ function defaultValuesFor(transaction: Tables<'transactions'> | undefined): Form
     valor: isEntrada ? transaction.valor_entrada : transaction.valor_saida,
     descricao: transaction.descricao,
     categoriaId: transaction.categoria_id ?? undefined,
-    cartaoId: transaction.cartao_id ?? undefined,
     data: transaction.data,
   }
 }
@@ -73,15 +57,12 @@ interface UseQuickAddFormArgs {
   transaction?: Tables<'transactions'>
 }
 
-/** Todo o estado e regra de negócio do formulário de lançamento rápido —
- * schema, sugestão automática de categoria a partir do histórico e o submit.
- * QuickAddSheet fica só com a apresentação (campos + wrapper responsivo). */
+/** Estado e regra do formulário de lançamento rápido: schema, sugestão de
+ * categoria pelo histórico e o submit. QuickAddSheet fica só com os campos. */
 export function useQuickAddForm({ open, onOpenChange, transaction }: UseQuickAddFormArgs) {
   const isEditing = !!transaction
   const { data: categoriasDespesa = [] } = useCategorias('despesa')
   const { data: categoriasReceita = [] } = useCategorias('receita')
-  const { data: cartoesDebito = [] } = useCartoes('debito')
-  const { data: cartoesCredito = [] } = useCartoes('credito')
   const { data: recentTransactions = [] } = useRecentTransactions()
   const createTransaction = useCreateTransaction()
   const updateTransaction = useUpdateTransaction()
@@ -104,10 +85,6 @@ export function useQuickAddForm({ open, onOpenChange, transaction }: UseQuickAdd
   const descricao = watch('descricao')
 
   const categoriaOptions = tipo === 'saida' ? categoriasDespesa : categoriasReceita
-  // Crédito só entra como opção em saídas — ele nunca recebe lançamento manual
-  // de entrada, só via "Pagar fatura" em Cartões.
-  const cartaoOptions = tipo === 'saida' ? [...cartoesDebito, ...cartoesCredito] : cartoesDebito
-  requireCartaoEmEntradaRef.current = cartoesDebito.length > 0
 
   const categoriaSuggestion = useMemo(() => {
     return suggestCategory(descricao, recentTransactions, 'categoria_id')
@@ -130,12 +107,9 @@ export function useQuickAddForm({ open, onOpenChange, transaction }: UseQuickAdd
     }
   }, [open, transaction, isEditing, reset])
 
-  // Chamado pelo ToggleGroup de tipo — troca entrada/saída zera o que só faz
-  // sentido pro tipo anterior e rearma a auto-sugestão pro novo.
   function handleTipoChange(value: string) {
     setValue('tipo', value as FormInput['tipo'])
     setValue('categoriaId', undefined)
-    setValue('cartaoId', undefined)
     setAutoSuggestedCategoria(false)
   }
 
@@ -147,7 +121,6 @@ export function useQuickAddForm({ open, onOpenChange, transaction }: UseQuickAdd
         valor_entrada: values.tipo === 'entrada' ? values.valor : 0,
         valor_saida: values.tipo === 'saida' ? values.valor : 0,
         categoria_id: values.categoriaId || null,
-        cartao_id: values.cartaoId || null,
       }
       if (isEditing) {
         await updateTransaction.mutateAsync({ id: transaction.id, values: payload })
@@ -168,7 +141,6 @@ export function useQuickAddForm({ open, onOpenChange, transaction }: UseQuickAdd
     control,
     errors,
     categoriaOptions,
-    cartaoOptions,
     categoriaSuggestion,
     isEditing,
     isPending: createTransaction.isPending || updateTransaction.isPending,

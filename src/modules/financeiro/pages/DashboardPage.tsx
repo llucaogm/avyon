@@ -29,8 +29,7 @@ import { useFinancialHealth } from '@/modules/financeiro/hooks/useFinancialHealt
 import { useIncomeCategories } from '@/modules/financeiro/hooks/useCategories'
 import { useMonthTransactions } from '@/modules/financeiro/hooks/useTransactions'
 import { useAppSettings, useUpdateAppSettings } from '@/modules/financeiro/hooks/useAppSettings'
-import { useCartoes, useCartaoTransacoes, useSaldoGlobal } from '@/modules/financeiro/hooks/useCartoes'
-import { computeCartaoSaldo } from '@/modules/financeiro/lib/cartaoSaldo'
+import { useSaldoGlobal } from '@/modules/financeiro/hooks/useSaldoGlobal'
 import { formatCurrency } from '@/shared/lib/formatters'
 import { todayIso } from '@/modules/financeiro/lib/monthUtils'
 import { getErrorMessage } from '@/shared/lib/errors'
@@ -42,8 +41,6 @@ export default function DashboardPage() {
   const { data: settings } = useAppSettings()
   const { data: currentMonthTransactions = [] } = useMonthTransactions(new Date())
   const { saldo: saldoAtual } = useSaldoGlobal()
-  const { data: cartoes = [] } = useCartoes()
-  const { data: cartaoTransacoes = [] } = useCartaoTransacoes()
   const [settingsOpen, setSettingsOpen] = useState(false)
 
   const rendaLiquida =
@@ -132,30 +129,6 @@ export default function DashboardPage() {
         />
         <FixedVsFlexibleMatrix percentualComprometido={health.percentualComprometido} />
       </Reveal>
-
-      {cartoes.length > 0 && (
-        <Reveal delay={60}>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Cartões</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-2">
-              {cartoes.map((c) => (
-                <div key={c.id} className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-2">
-                    <span className="size-2 rounded-full" style={{ backgroundColor: c.cor }} />
-                    {c.nome}
-                    <span className="text-xs text-muted-foreground">
-                      {c.tipo === 'credito' ? '· disponível' : '· débito'}
-                    </span>
-                  </span>
-                  <span className="font-medium">{formatCurrency(computeCartaoSaldo(c, cartaoTransacoes))}</span>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </Reveal>
-      )}
 
       <Reveal delay={100}>
         <UpcomingDueList />

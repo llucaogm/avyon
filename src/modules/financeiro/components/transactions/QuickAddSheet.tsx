@@ -46,7 +46,6 @@ export function QuickAddSheet({ open, onOpenChange, transaction }: QuickAddSheet
     control,
     errors,
     categoriaOptions,
-    cartaoOptions,
     categoriaSuggestion,
     isEditing,
     isPending,
@@ -109,29 +108,6 @@ export function QuickAddSheet({ open, onOpenChange, transaction }: QuickAddSheet
         {categoriaSuggestion && !isEditing && (
           <p className="text-xs text-muted-foreground">Categoria sugerida com base no histórico</p>
         )}
-      </FormField>
-
-      <FormField label="Cartão" htmlFor="cartaoId" error={errors.cartaoId?.message}>
-        <Controller
-          control={control}
-          name="cartaoId"
-          render={({ field }) => (
-            <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger id="cartaoId" className="w-full">
-                <SelectValue placeholder="Nenhum" />
-              </SelectTrigger>
-              <SelectContent>
-                {cartaoOptions.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    <span className="mr-1 inline-block size-2.5 rounded-full" style={{ backgroundColor: c.cor }} />
-                    {c.nome}
-                    <span className="text-muted-foreground"> · {c.tipo === 'credito' ? 'Crédito' : 'Débito'}</span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        />
       </FormField>
 
       <FormField label="Data" htmlFor="data">

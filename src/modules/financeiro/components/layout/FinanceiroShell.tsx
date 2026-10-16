@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, Receipt, PiggyBank, Target, TrendingUp, Shield, Tags, PieChart, BookOpen, CreditCard } from 'lucide-react'
+import { LayoutDashboard, Receipt, Target, TrendingUp, Shield, Tags, PieChart } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
 import { SlidingBottomNav, type SlidingBottomNavItem } from '@/shared/components/layout/SlidingBottomNav'
 import { QuickAddButton } from '@/modules/financeiro/components/transactions/QuickAddButton'
@@ -8,17 +8,14 @@ import { MonthProvider } from '@/modules/financeiro/context/MonthProvider'
 const primaryNav: SlidingBottomNavItem[] = [
   { to: '/financeiro', label: 'Início', icon: LayoutDashboard, end: true },
   { to: '/financeiro/transactions', label: 'Lançamentos', icon: Receipt },
-  { to: '/financeiro/budget', label: 'Orçamento', icon: PiggyBank },
   { to: '/financeiro/goals', label: 'Metas', icon: Target },
   { to: '/financeiro/forecast', label: 'Projeção', icon: TrendingUp },
 ]
 
 const secondaryNav: SlidingBottomNavItem[] = [
-  { to: '/financeiro/cartoes', label: 'Cartões', icon: CreditCard },
-  { to: '/financeiro/emergency-fund', label: 'Reserva de Emergência', icon: Shield },
+  { to: '/financeiro/emergency-fund', label: 'Reserva', icon: Shield },
   { to: '/financeiro/gastos-fixos', label: 'Gastos Fixos', icon: Tags },
   { to: '/financeiro/categorias', label: 'Categorias', icon: PieChart },
-  { to: '/financeiro/como-usar', label: 'Como Usar', icon: BookOpen },
 ]
 
 export function FinanceiroShell() {
@@ -54,7 +51,7 @@ export function FinanceiroShell() {
           </main>
 
           <QuickAddButton />
-          <SlidingBottomNav items={primaryNav} />
+          <SlidingBottomNav items={primaryNav} moreItems={secondaryNav} />
         </div>
       </div>
     </MonthProvider>

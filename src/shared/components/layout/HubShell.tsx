@@ -3,7 +3,6 @@ import { LogOut } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/shared/lib/supabaseClient'
 import { useLogger } from '@/shared/hooks/useLogger'
-import { ModuleSwitcher } from '@/shared/components/layout/ModuleSwitcher'
 import { Button } from '@/shared/components/ui/button'
 import { AuroraBackground } from '@/shared/components/effects/AuroraBackground'
 import avyonLogo from '@/assets/avyon-logo.png'
@@ -27,11 +26,9 @@ export function HubShell() {
         className="relative z-10 flex items-center justify-between border-b bg-background/70 px-4 py-2.5 backdrop-blur-sm"
         style={{ paddingTop: 'max(0.625rem, env(safe-area-inset-top))' }}
       >
-        <Link to="/" className="press-feedback flex items-center gap-2">
+        <Link to="/financeiro" className="press-feedback flex items-center gap-2">
           <img src={avyonLogo} alt="Avyon" className="h-7 w-auto" />
         </Link>
-
-        <ModuleSwitcher />
 
         <Button
           variant="ghost"

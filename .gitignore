@@ -26,3 +26,5 @@ dist-ssr
 # Raw logo source dumps (processed into src/assets and public/icons)
 /avyon-logo.png
 /icon-avyon.png
+.vercel
+.env*
