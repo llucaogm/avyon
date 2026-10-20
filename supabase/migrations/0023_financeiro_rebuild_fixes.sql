@@ -7,3 +7,5 @@ insert into public.app_settings (user_id) select id from auth.users on conflict 
 insert into public.emergency_fund_config (user_id) select id from auth.users on conflict do nothing;
 
 revoke execute on function public.handle_new_user() from public, anon, authenticated;
+-- O gatilho roda como supabase_auth_admin, que só tinha EXECUTE via PUBLIC.
+grant execute on function public.handle_new_user() to supabase_auth_admin;
